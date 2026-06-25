@@ -27,7 +27,7 @@
     --read-lh: 1.85;
     --read-width: 640px;
     --transition: 0.2s ease;
-    color-scheme: light dark;
+    /* Removed color-scheme to prevent iOS native dark mode from overriding custom themes */
   }
 
   [data-theme="dark"] {
@@ -61,8 +61,8 @@
   html, body {
     height: 100%;
     font-family: var(--font-ui);
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg) !important;
+    color: var(--text) !important;
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
   }
@@ -117,15 +117,15 @@
   .progress-label.right { text-align: right; }
   #progress-track {
     flex: 1; height: 3px; background: var(--border-strong); border-radius: 99px; cursor: pointer;
-    position: relative;
+    position: relative; touch-action: none; padding: 10px 0; background-clip: content-box;
   }
-  #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s ease; }
+  #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; }
   #progress-thumb {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
     width: 14px; height: 14px; border-radius: 50%;
     background: var(--accent); border: 2px solid var(--surface);
     box-shadow: 0 0 0 1px var(--accent);
-    cursor: grab; transition: left 0.3s ease;
+    cursor: grab;
   }
   .chapter-row {
     display: flex; align-items: center; justify-content: space-between;
@@ -225,11 +225,23 @@
     scroll-behavior: smooth;
   }
   #reader.active { display: flex; }
+  
+  /* CRITICAL FIX: Aggressive overriding to block iOS dark mode & extensions */
+  #reader-content, 
+  #reader-content * {
+    color: var(--text) !important; 
+    background-color: transparent !important;
+  }
+  #reader-content a, 
+  #reader-content a * {
+    color: var(--accent) !important;
+  }
+
   #reader-content {
     flex: 1; max-width: var(--read-width); width: 100%;
     margin: 0 auto; padding: 32px 24px 64px;
     font-family: var(--font-read); font-size: var(--read-size);
-    line-height: var(--read-lh); color: var(--text);
+    line-height: var(--read-lh);
   }
   #reader-content h1, #reader-content h2, #reader-content h3 {
     font-family: var(--font-read); color: var(--text);
@@ -244,8 +256,8 @@
   #reader-content img { max-width: 100%; border-radius: var(--radius-sm); margin: 1.5em 0; }
   #reader-content a { color: var(--accent); text-decoration: underline; }
   #reader-content blockquote {
-    border-left: 3px solid var(--accent); padding-left: 1.2em;
-    margin: 1.5em 0; color: var(--text-muted); font-style: italic;
+    border-left: 3px solid var(--accent) !important; padding-left: 1.2em;
+    margin: 1.5em 0; color: var(--text-muted) !important; font-style: italic;
   }
   #reader-content ul, #reader-content ol { padding-left: 1.8em; margin-bottom: 1.2em; }
   #reader-content li { margin-bottom: 0.4em; }
@@ -358,9 +370,10 @@
 
   /* ── Tap zones ── */
   #tap-left, #tap-right {
-    display: none; position: fixed; top: 0; bottom: 0; z-index: 100; cursor: pointer;
-    width: 25%;
+    display: block; position: fixed; top: 0; bottom: 0; z-index: 100; cursor: pointer;
+    width: 25%; pointer-events: none;
   }
+  #reader.active ~ #tap-left, #reader.active ~ #tap-right { pointer-events: auto; }
   #tap-left { left: 0; }
   #tap-right { right: 0; }
 
@@ -378,7 +391,6 @@
 <body>
 <div id="app">
 
-  <!-- Top Bar -->
   <div id="topbar">
     <button class="bar-btn" id="btn-toc" aria-label="Table of contents" style="display:none">☰</button>
     <span class="bar-title" id="topbar-title">Leaf</span>
@@ -386,7 +398,6 @@
     <button class="bar-btn" id="btn-settings" aria-label="Reading settings" style="display:none">Aa</button>
   </div>
 
-  <!-- Home Screen -->
   <div id="home">
     <div id="home-inner">
       <div class="home-hero">
@@ -412,12 +423,10 @@
     </div>
   </div>
 
-  <!-- Reader -->
   <div id="reader">
     <div id="reader-content"></div>
   </div>
 
-  <!-- Bottom Bar -->
   <div id="bottombar" style="display:none">
     <div class="progress-row">
       <span class="progress-label" id="pct-label">0%</span>
@@ -434,7 +443,6 @@
     </div>
   </div>
 
-  <!-- TOC Panel -->
   <div id="toc-overlay"></div>
   <div id="toc-panel" role="dialog" aria-label="Table of contents">
     <div class="toc-header">
@@ -444,7 +452,6 @@
     <div id="toc-list"></div>
   </div>
 
-  <!-- Settings Panel -->
   <div id="settings-panel" role="dialog" aria-label="Reading settings">
     <div class="settings-section">
       <div class="settings-label">Theme</div>
@@ -481,29 +488,25 @@
     </div>
   </div>
 
-  <!-- Tap zones for page turn -->
   <div id="tap-left"></div>
   <div id="tap-right"></div>
 
-  <!-- Loading overlay -->
   <div id="loading">
     <div class="spinner"></div>
     <span>Opening book…</span>
   </div>
 
-  <!-- Toast -->
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
 
-<!-- JSZip for EPUB parsing -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 'use strict';
 
 // ── State ──────────────────────────────────────────────────────────────────
 const state = {
-  books: [],       // [{id, title, author, cover, tocItems, chapters, progress, addedAt}]
-  current: null,   // active book
+  books: [],
+  current: null,
   chapterIdx: 0,
   settings: {
     theme: 'light', fontSize: 18, lineHeight: 185, maxWidth: 640, fontFamily: 'serif'
@@ -581,7 +584,6 @@ function applySettings() {
   const fontMap = { serif: "Georgia, 'Times New Roman', serif", sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", mono: "'Courier New', Courier, monospace" };
   document.documentElement.style.setProperty('--font-read', fontMap[s.fontFamily] || fontMap.serif);
 
-  // Sync UI controls
   $('font-size-slider').value = s.fontSize;
   $('line-height-slider').value = s.lineHeight;
   $('font-sample').style.fontSize = s.fontSize + 'px';
@@ -596,13 +598,11 @@ function applySettings() {
 async function parseEpub(arrayBuffer) {
   const zip = await JSZip.loadAsync(arrayBuffer);
 
-  // 1. Find container.xml → OPF path
   const containerXml = await zip.file('META-INF/container.xml').async('string');
   const containerDoc = new DOMParser().parseFromString(containerXml, 'application/xml');
   const opfPath = containerDoc.querySelector('rootfile').getAttribute('full-path');
   const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
 
-  // 2. Parse OPF
   const opfXml = await zip.file(opfPath).async('string');
   const opfDoc = new DOMParser().parseFromString(opfXml, 'application/xml');
 
@@ -612,7 +612,6 @@ async function parseEpub(arrayBuffer) {
     if (!meta[tag]) meta[tag] = n.textContent.trim();
   });
 
-  // 3. Build manifest
   const manifest = {};
   opfDoc.querySelectorAll('manifest item').forEach(item => {
     manifest[item.getAttribute('id')] = {
@@ -621,24 +620,20 @@ async function parseEpub(arrayBuffer) {
     };
   });
 
-  // 4. Spine → ordered chapter list
   const spineItems = [];
   opfDoc.querySelectorAll('spine itemref').forEach(ref => {
     const id = ref.getAttribute('idref');
     if (manifest[id]) spineItems.push({id, ...manifest[id]});
   });
 
-  // 5. Load chapter HTML
   const chapterContents = await Promise.all(spineItems.map(async item => {
     const fullPath = opfDir + item.href;
     const file = zip.file(fullPath) || zip.file(item.href);
     if (!file) return { id: item.id, href: item.href, html: '<p>(Chapter not found)</p>', title: '' };
     const raw = await file.async('string');
 
-    // Parse & sanitize
     const doc = new DOMParser().parseFromString(raw, 'text/html');
 
-    // Inline images as base64
     const imgEls = doc.querySelectorAll('img, image');
     await Promise.all(Array.from(imgEls).map(async img => {
       const src = img.getAttribute('src') || img.getAttribute('xlink:href') || '';
@@ -659,13 +654,11 @@ async function parseEpub(arrayBuffer) {
     const title = doc.querySelector('title')?.textContent || doc.querySelector('h1,h2,h3')?.textContent || item.href;
     let body = doc.querySelector('body')?.innerHTML || doc.documentElement?.innerHTML || raw;
 
-    // Remove scripts and style tags for safety
     body = body.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
 
     return { id: item.id, href: item.href, html: body, title: title.trim() };
   }));
 
-  // 6. Parse NCX / nav for TOC
   const tocItems = [];
   const ncxId = opfDoc.querySelector('spine')?.getAttribute('toc');
   const navItem = Object.values(manifest).find(m => m.type === 'application/xhtml+xml' && m.href.includes('nav'));
@@ -700,14 +693,12 @@ async function parseEpub(arrayBuffer) {
     }
   }
 
-  // Fallback: use chapter titles
   if (!tocItems.length) {
     chapterContents.forEach((c, i) => {
       tocItems.push({ label: c.title || `Chapter ${i+1}`, href: c.href, depth: 0 });
     });
   }
 
-  // 7. Cover image
   let coverBlob = null;
   const coverId = opfDoc.querySelector('meta[name="cover"]')?.getAttribute('content');
   const coverItem = (coverId && manifest[coverId]) || Object.values(manifest).find(m => m.type?.startsWith('image/') && /cover/i.test(m.href));
@@ -756,7 +747,7 @@ function resolvePath(base, relative) {
   return parts.join('/');
 }
 
-// ── Book DB (IndexedDB for raw epub storage) ───────────────────────────────
+// ── Book DB (IndexedDB) ───────────────────────────────
 let db;
 function openDB() {
   return new Promise((res, rej) => {
@@ -869,7 +860,9 @@ async function openBook(id) {
     state.chapterIdx = meta.chapterIdx || 0;
 
     showReader();
-    renderChapter(state.chapterIdx);
+    // Re-calculate the initial scroll position based on book's saved global progress
+    const scrollPct = calculateScrollPctFromProgress(meta.progress || 0);
+    renderChapter(state.chapterIdx, scrollPct);
     renderTOC();
   } catch(e) {
     console.error(e);
@@ -877,6 +870,13 @@ async function openBook(id) {
   } finally {
     loadingEl.classList.remove('visible');
   }
+}
+
+// Helper to determine inner-chapter scroll position based on library progress%
+function calculateScrollPctFromProgress(progPct) {
+  if (!state.current || !state.current.chapters) return 0;
+  const exactChapter = (progPct / 100) * state.current.chapters.length;
+  return exactChapter - Math.floor(exactChapter);
 }
 
 // ── Reader UI ──────────────────────────────────────────────────────────────
@@ -887,17 +887,14 @@ function showReader() {
   $('btn-toc').style.display = '';
   $('btn-home').style.display = '';
   $('btn-settings').style.display = '';
-  $('tap-left').style.display = '';
-  $('tap-right').style.display = '';
+  $('tap-left').style.display = 'block';
+  $('tap-right').style.display = 'block';
   $('topbar-title').textContent = state.current.title;
   readerEl.scrollTop = 0;
 }
 
 function showHome() {
-  if (state.current) {
-    state.current.chapterIdx = state.chapterIdx;
-    saveState();
-  }
+  if (state.current) saveState();
   state.current = null;
   readerEl.classList.remove('active');
   bottombar.style.display = 'none';
@@ -912,25 +909,37 @@ function showHome() {
   renderLibrary();
 }
 
-function renderChapter(idx) {
+function renderChapter(idx, scrollPct = 0) {
   const book = state.current;
   if (!book || !book.chapters) return;
   idx = Math.max(0, Math.min(idx, book.chapters.length - 1));
   state.chapterIdx = idx;
+  book.chapterIdx = idx;
 
   const chapter = book.chapters[idx];
   readerContent.innerHTML = chapter.html;
 
-  // Clean up inline styles that clash with our theme
+  // Clean inline styles but keep structure
   readerContent.querySelectorAll('[style]').forEach(el => {
     const keep = [];
     const style = el.getAttribute('style');
     if (/font-style:\s*italic/i.test(style)) keep.push('font-style:italic');
+    if (/font-weight:\s*bold/i.test(style)) keep.push('font-weight:bold');
     if (keep.length) el.setAttribute('style', keep.join(';'));
     else el.removeAttribute('style');
   });
 
-  readerEl.scrollTop = 0;
+  // Apply target scroll accurately after DOM paints
+  setTimeout(() => {
+    if (scrollPct > 0) {
+      const sh = readerEl.scrollHeight;
+      const ch = readerEl.clientHeight;
+      readerEl.scrollTop = scrollPct * (sh - ch);
+    } else {
+      readerEl.scrollTop = 0;
+    }
+    updateProgress();
+  }, 10);
 
   // Update nav
   $('btn-prev').disabled = idx === 0;
@@ -942,21 +951,34 @@ function renderChapter(idx) {
   chapterName.textContent = chapTitle;
   $('topbar-title').textContent = chapTitle.length > 30 ? chapTitle.slice(0,28)+'…' : chapTitle;
 
-  updateProgress();
   updateTOCActive(idx);
-  book.chapterIdx = idx;
-  book.progress = Math.round((idx / Math.max(1, book.chapters.length - 1)) * 100);
-  saveState();
 }
 
+// Global Progress Updater - Calculates dynamically as you scroll through the chapter
 function updateProgress() {
   const book = state.current;
   if (!book || !book.chapters) return;
-  const pct = Math.round((state.chapterIdx / Math.max(1, book.chapters.length - 1)) * 100);
-  progressFill.style.width = pct + '%';
-  progressThumb.style.left = pct + '%';
-  pctLabel.textContent = pct + '%';
-  locLabel.textContent = `${state.chapterIdx+1}/${book.chapters.length}`;
+  const totalChaps = book.chapters.length;
+  if (totalChaps === 0) return;
+
+  const st = readerEl.scrollTop;
+  const sh = readerEl.scrollHeight;
+  const ch = readerEl.clientHeight;
+  const scrollable = sh - ch;
+  
+  // What percentage of the current chapter have we scrolled?
+  const chapterScrollPct = scrollable > 0 ? (st / scrollable) : 0;
+  
+  // Calculate true book percentage
+  const overallPct = Math.max(0, Math.min(100, ((state.chapterIdx + chapterScrollPct) / totalChaps) * 100));
+
+  progressFill.style.width = overallPct + '%';
+  progressThumb.style.left = overallPct + '%';
+  pctLabel.textContent = Math.round(overallPct) + '%';
+  locLabel.textContent = `${state.chapterIdx+1}/${totalChaps}`;
+
+  // Assign to global book object so the library displays correctly
+  book.progress = Math.round(overallPct);
 }
 
 // ── TOC ────────────────────────────────────────────────────────────────────
@@ -971,7 +993,6 @@ function renderTOC() {
     const btn = el('button', 'toc-item', item.label || 'Section');
     btn.dataset.depth = Math.min(item.depth, 2);
     btn.addEventListener('click', () => {
-      // Find chapter by href
       const hrefBase = item.href.split('#')[0];
       const idx = book.chapters.findIndex(c => c.href === hrefBase || c.href.endsWith('/' + hrefBase) || hrefBase.endsWith(c.href));
       if (idx >= 0) renderChapter(idx);
@@ -1005,14 +1026,9 @@ function toggleSettings() { state.settingsOpen ? closeSettings() : openSettings(
 
 // ── File Import ────────────────────────────────────────────────────────────
 async function importFile(file) {
-  if (!file || !file.name.endsWith('.epub')) {
-    toast('Please open an .epub file');
-    return;
-  }
-  if (file.size > 80 * 1024 * 1024) {
-    toast('File is too large (max 80 MB)');
-    return;
-  }
+  if (!file || !file.name.endsWith('.epub')) { toast('Please open an .epub file'); return; }
+  if (file.size > 80 * 1024 * 1024) { toast('File is too large (max 80 MB)'); return; }
+  
   loadingEl.classList.add('visible');
   try {
     const buffer = await file.arrayBuffer();
@@ -1044,7 +1060,6 @@ async function importFile(file) {
 }
 
 // ── Event Wiring ───────────────────────────────────────────────────────────
-// File input
 const fileInput = $('file-input');
 const dropZone  = $('drop-zone');
 
@@ -1052,51 +1067,58 @@ dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') fileInput.click(); });
 fileInput.addEventListener('change', e => { if(e.target.files[0]) importFile(e.target.files[0]); e.target.value=''; });
 
-// Drag & drop
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) importFile(f);
-});
-
-// Also accept drops on the whole window
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if (f) importFile(f); });
 window.addEventListener('dragover', e => e.preventDefault());
-window.addEventListener('drop', e => {
-  e.preventDefault();
-  const f = e.dataTransfer.files[0];
-  if (f) importFile(f);
-});
+window.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) importFile(f); });
 
-// Nav buttons
 $('btn-prev').addEventListener('click', () => { if(state.chapterIdx > 0) renderChapter(state.chapterIdx - 1); });
-$('btn-next').addEventListener('click', () => {
-  if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
-});
+$('btn-next').addEventListener('click', () => { if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1); });
 $('btn-toc').addEventListener('click', () => { closeSettings(); toggleTOC(); });
 $('btn-toc-close').addEventListener('click', closeTOC);
 $('btn-home').addEventListener('click', showHome);
 $('btn-settings').addEventListener('click', () => { closeTOC(); toggleSettings(); });
 tocOverlay.addEventListener('click', closeTOC);
 
-// Tap zones for chapter navigation
-$('tap-left').addEventListener('click', () => { if(state.chapterIdx > 0) renderChapter(state.chapterIdx - 1); });
+
+// UX Enhance: Tap zones now gracefully scroll down the page, jumping chapters only when at bounds
 $('tap-right').addEventListener('click', () => {
-  if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
+  const sh = readerEl.scrollHeight, st = readerEl.scrollTop, ch = readerEl.clientHeight;
+  if (st + ch >= sh - 10) {
+    if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
+  } else {
+    readerEl.scrollBy({ top: ch * 0.85, behavior: 'smooth' });
+  }
 });
 
-// Auto-hide bars on scroll
+$('tap-left').addEventListener('click', () => {
+  if (readerEl.scrollTop <= 10) {
+    if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1); // Goes to bottom of prev chapter
+  } else {
+    readerEl.scrollBy({ top: -(readerEl.clientHeight * 0.85), behavior: 'smooth' });
+  }
+});
+
+
+// Auto-hide bars & Dynamic Progress Scroll
 let lastScroll = 0, scrollTimer;
+let isDraggingProgress = false;
+
 readerEl.addEventListener('scroll', () => {
+  if (!isDraggingProgress) updateProgress();
+
   const y = readerEl.scrollTop;
   const dy = y - lastScroll;
   lastScroll = y;
+  
   if (Math.abs(dy) < 4) return;
   const goHide = dy > 0 && y > 80;
+  
   topbar.classList.toggle('hidden', goHide);
   bottombar.classList.toggle('hidden', goHide);
   state.barsVisible = !goHide;
+  
   clearTimeout(scrollTimer);
   scrollTimer = setTimeout(() => {
     topbar.classList.remove('hidden');
@@ -1104,7 +1126,6 @@ readerEl.addEventListener('scroll', () => {
   }, 3000);
 }, {passive: true});
 
-// Tap center to toggle bars
 readerContent.addEventListener('click', e => {
   if (state.settingsOpen) { closeSettings(); return; }
   if (state.tocOpen) { closeTOC(); return; }
@@ -1116,42 +1137,67 @@ readerContent.addEventListener('click', e => {
   }
 });
 
-// Progress track click/drag
+// Fixed Pointer Events Drag Slider: Smooth Visual Seeking
 const track = $('progress-track');
-function seekProgress(e) {
-  const book = state.current;
-  if (!book?.chapters) return;
-  const rect = track.getBoundingClientRect();
-  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  const idx = Math.round(pct * (book.chapters.length - 1));
-  renderChapter(idx);
-}
-track.addEventListener('click', seekProgress);
-let dragging = false;
-track.addEventListener('pointerdown', e => { dragging = true; e.target.setPointerCapture(e.pointerId); });
-track.addEventListener('pointermove', e => { if(dragging) seekProgress(e); });
-track.addEventListener('pointerup', () => dragging = false);
+let dragPct = 0;
 
-// Keyboard shortcuts
-document.addEventListener('keydown', e => {
-  if (!state.current) return;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
-    if (state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-    if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1);
-  } else if (e.key === 'Escape') {
-    if (state.settingsOpen) closeSettings();
-    else if (state.tocOpen) closeTOC();
-    else showHome();
+track.addEventListener('pointerdown', e => {
+  isDraggingProgress = true;
+  e.target.setPointerCapture(e.pointerId);
+  updateDragVisuals(e);
+});
+
+track.addEventListener('pointermove', e => {
+  if (isDraggingProgress) updateDragVisuals(e);
+});
+
+track.addEventListener('pointerup', e => {
+  if (isDraggingProgress) {
+    isDraggingProgress = false;
+    updateDragVisuals(e);
+    executeSeek(dragPct);
   }
 });
 
-// Swipe gesture for chapter navigation
+function updateDragVisuals(e) {
+  const rect = track.getBoundingClientRect();
+  dragPct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  progressFill.style.width = (dragPct * 100) + '%';
+  progressThumb.style.left = (dragPct * 100) + '%';
+  pctLabel.textContent = Math.round(dragPct * 100) + '%';
+}
+
+function executeSeek(pct) {
+  const book = state.current;
+  if (!book?.chapters) return;
+  
+  const exactChapter = pct * book.chapters.length;
+  const targetIdx = Math.min(book.chapters.length - 1, Math.floor(exactChapter));
+  const chapterScrollPct = exactChapter - targetIdx;
+
+  if (targetIdx !== state.chapterIdx) {
+    renderChapter(targetIdx, chapterScrollPct);
+  } else {
+    const sh = readerEl.scrollHeight, ch = readerEl.clientHeight;
+    readerEl.scrollTop = chapterScrollPct * (sh - ch);
+    updateProgress();
+  }
+}
+
+// Keyboard / Swipe Shortcuts
+document.addEventListener('keydown', e => {
+  if (!state.current) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
+    $('tap-right').click();
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+    $('tap-left').click();
+  } else if (e.key === 'Escape') {
+    if (state.settingsOpen) closeSettings(); else if (state.tocOpen) closeTOC(); else showHome();
+  }
+});
+
 let touchStartX = 0, touchStartY = 0;
-readerEl.addEventListener('touchstart', e => {
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-}, {passive: true});
+readerEl.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, {passive: true});
 readerEl.addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = e.changedTouches[0].clientY - touchStartY;
@@ -1161,50 +1207,29 @@ readerEl.addEventListener('touchend', e => {
   }
 }, {passive: true});
 
-// Settings controls
-$('font-size-slider').addEventListener('input', e => {
-  state.settings.fontSize = parseInt(e.target.value);
-  $('font-sample').style.fontSize = state.settings.fontSize + 'px';
-  document.documentElement.style.setProperty('--read-size', state.settings.fontSize + 'px');
-  saveState();
-});
-$('line-height-slider').addEventListener('input', e => {
-  state.settings.lineHeight = parseInt(e.target.value);
-  document.documentElement.style.setProperty('--read-lh', (state.settings.lineHeight/100).toFixed(2));
-  saveState();
-});
+$('font-size-slider').addEventListener('input', e => { state.settings.fontSize = parseInt(e.target.value); applySettings(); saveState(); });
+$('line-height-slider').addEventListener('input', e => { state.settings.lineHeight = parseInt(e.target.value); applySettings(); saveState(); });
 
 document.querySelectorAll('.theme-dot').forEach(dot => {
-  dot.addEventListener('click', () => {
-    state.settings.theme = dot.dataset.t;
-    applySettings(); saveState();
-  });
+  dot.addEventListener('click', () => { state.settings.theme = dot.dataset.t; applySettings(); saveState(); });
   dot.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') dot.click(); });
 });
 
 document.querySelectorAll('[data-margin]').forEach(btn => {
   btn.addEventListener('click', () => {
     state.settings.maxWidth = parseInt(btn.dataset.margin);
-    document.documentElement.style.setProperty('--read-width', state.settings.maxWidth + 'px');
-    document.querySelectorAll('[data-margin]').forEach(b => b.classList.toggle('active', b === btn));
-    saveState();
+    applySettings(); saveState();
   });
 });
 
 document.querySelectorAll('[data-font]').forEach(btn => {
   btn.addEventListener('click', () => {
     state.settings.fontFamily = btn.dataset.font;
-    const fontMap = { serif: "Georgia, 'Times New Roman', serif", sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", mono: "'Courier New', Courier, monospace" };
-    document.documentElement.style.setProperty('--font-read', fontMap[state.settings.fontFamily]);
-    document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', b === btn));
-    saveState();
+    applySettings(); saveState();
   });
 });
 
-// Close settings when tapping outside
-document.addEventListener('click', e => {
-  if (state.settingsOpen && !settingsPanel.contains(e.target) && e.target !== $('btn-settings')) closeSettings();
-});
+document.addEventListener('click', e => { if (state.settingsOpen && !settingsPanel.contains(e.target) && e.target !== $('btn-settings')) closeSettings(); });
 
 // ── Init ───────────────────────────────────────────────────────────────────
 async function init() {
