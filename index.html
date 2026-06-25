@@ -18,7 +18,7 @@
     --accent-light: #E8F5EF;
     --border: rgba(28,25,23,0.10);
     --border-strong: rgba(28,25,23,0.18);
-    --shadow: 0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    --shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 6px rgba(0,0,0,0.04);
     --radius: 14px;
     --radius-sm: 8px;
     --font-read: Georgia, 'Times New Roman', serif;
@@ -26,34 +26,33 @@
     --read-size: 18px;
     --read-lh: 1.85;
     --read-width: 640px;
-    --transition: 0.2s ease;
-    /* Removed color-scheme to prevent iOS native dark mode from overriding custom themes */
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   [data-theme="dark"] {
-    --bg: #18181B;
-    --surface: #27272A;
-    --text: #F4F4F5;
+    --bg: #121214;
+    --surface: #1E1E22;
+    --text: #E4E4E7;
     --text-muted: #A1A1AA;
-    --text-hint: #71717A;
+    --text-hint: #52525B;
     --accent: #4ADE80;
     --accent-light: #14532D;
     --border: rgba(255,255,255,0.08);
-    --border-strong: rgba(255,255,255,0.14);
-    --shadow: 0 2px 16px rgba(0,0,0,0.3);
+    --border-strong: rgba(255,255,255,0.15);
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
   }
 
   [data-theme="sepia"] {
-    --bg: #F5ECD7;
-    --surface: #FBF6ED;
-    --text: #3B2F1E;
-    --text-muted: #7A6547;
-    --text-hint: #A08B6E;
+    --bg: #F4EAD4;
+    --surface: #FDF6E3;
+    --text: #433422;
+    --text-muted: #7C6A52;
+    --text-hint: #A39274;
     --accent: #8B4513;
-    --accent-light: #F3E8D8;
-    --border: rgba(59,47,30,0.10);
-    --border-strong: rgba(59,47,30,0.18);
-    --shadow: 0 2px 16px rgba(59,47,30,0.08);
+    --accent-light: #EADCB9;
+    --border: rgba(67,52,34,0.10);
+    --border-strong: rgba(67,52,34,0.18);
+    --shadow: 0 4px 20px rgba(67,52,34,0.06);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -67,13 +66,11 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  /* ── App Shell ── */
-  #app { height: 100%; display: flex; flex-direction: column; }
+  #app { height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
-  /* ── Top Bar ── */
   #topbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-    height: calc(52px + env(safe-area-inset-top));
+    height: calc(56px + env(safe-area-inset-top));
     padding-top: env(safe-area-inset-top);
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -81,16 +78,17 @@
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
     gap: 12px;
+    box-shadow: var(--shadow);
     transition: transform var(--transition), opacity var(--transition);
   }
-  #topbar.hidden { transform: translateY(-100%); }
+  #topbar.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
 
   .bar-title {
     flex: 1; font-size: 15px; font-weight: 600; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .bar-btn {
-    width: 36px; height: 36px; border: none; background: none; cursor: pointer;
+    width: 38px; height: 38px; border: none; background: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     border-radius: var(--radius-sm); color: var(--text);
     font-size: 20px; transition: background var(--transition);
@@ -99,7 +97,6 @@
   .bar-btn:hover { background: var(--border); }
   .bar-btn:active { background: var(--border-strong); transform: scale(0.94); }
 
-  /* ── Bottom Bar ── */
   #bottombar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
     padding-bottom: env(safe-area-inset-bottom);
@@ -107,16 +104,17 @@
     border-top: 1px solid var(--border);
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
-    transition: transform var(--transition);
+    box-shadow: var(--shadow);
+    transition: transform var(--transition), opacity var(--transition);
   }
-  #bottombar.hidden { transform: translateY(100%); }
+  #bottombar.hidden { transform: translateY(100%); opacity: 0; pointer-events: none; }
   .progress-row {
-    display: flex; align-items: center; gap: 10px; padding: 10px 0 4px;
+    display: flex; align-items: center; gap: 10px; padding: 12px 0 4px;
   }
-  .progress-label { font-size: 12px; color: var(--text-hint); min-width: 32px; }
+  .progress-label { font-size: 12px; color: var(--text-hint); min-width: 36px; user-select: none; }
   .progress-label.right { text-align: right; }
   #progress-track {
-    flex: 1; height: 3px; background: var(--border-strong); border-radius: 99px; cursor: pointer;
+    flex: 1; height: 4px; background: var(--border-strong); border-radius: 99px; cursor: pointer;
     position: relative; touch-action: none; padding: 10px 0; background-clip: content-box;
   }
   #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; }
@@ -129,10 +127,10 @@
   }
   .chapter-row {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 0 10px; gap: 8px;
+    padding: 6px 0 12px; gap: 8px;
   }
   .nav-btn {
-    padding: 6px 12px; border: 1px solid var(--border-strong);
+    padding: 6px 14px; border: 1px solid var(--border-strong);
     border-radius: 99px; background: none; color: var(--text-muted);
     font-size: 12px; font-family: var(--font-ui); cursor: pointer;
     transition: all var(--transition); white-space: nowrap;
@@ -141,16 +139,15 @@
   .nav-btn:disabled { opacity: 0.35; pointer-events: none; }
   #chapter-name {
     font-size: 12px; color: var(--text-hint); text-align: center;
-    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none;
   }
 
-  /* ── Home Screen ── */
   #home {
     flex: 1; display: flex; flex-direction: column;
-    padding-top: calc(52px + env(safe-area-inset-top));
+    padding-top: calc(56px + env(safe-area-inset-top));
     overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
-  #home-inner { padding: 24px 20px; max-width: 480px; margin: 0 auto; }
+  #home-inner { padding: 24px 20px; max-width: 480px; margin: 0 auto; width: 100%; }
 
   .home-hero { padding: 40px 0 32px; text-align: center; }
   .leaf-icon {
@@ -163,7 +160,6 @@
   }
   .home-hero p { font-size: 15px; color: var(--text-muted); margin-top: 6px; }
 
-  /* Drop Zone */
   #drop-zone {
     border: 2px dashed var(--border-strong); border-radius: var(--radius);
     padding: 36px 24px; text-align: center; cursor: pointer;
@@ -179,7 +175,6 @@
   .drop-sub { font-size: 13px; color: var(--text-muted); }
   #file-input { display: none; }
 
-  /* Library */
   .section-title {
     font-size: 11px; font-weight: 700; color: var(--text-hint);
     letter-spacing: 0.08em; text-transform: uppercase;
@@ -216,47 +211,55 @@
   }
   .book-delete:hover { background: #FEE2E2; color: #DC2626; }
 
-  /* ── Reader ── */
   #reader {
     display: none; flex: 1; flex-direction: column;
-    padding-top: calc(52px + env(safe-area-inset-top));
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
     overflow-y: auto; -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    width: 100%; height: 100%;
   }
   #reader.active { display: flex; }
   
-  /* CRITICAL FIX: Aggressive overriding to block iOS dark mode & extensions */
-  #reader-content, 
-  #reader-content * {
-    color: var(--text) !important; 
-    background-color: transparent !important;
+  #reader-content {
+    flex: 1; max-width: var(--read-width); width: 100%;
+    margin: 0 auto; padding: calc(80px + env(safe-area-inset-top)) 24px calc(110px + env(safe-area-inset-bottom));
+    font-family: var(--font-read); font-size: var(--read-size);
+    line-height: var(--read-lh);
+    color: var(--text);
   }
+  
+  #reader-content p, 
+  #reader-content span, 
+  #reader-content li, 
+  #reader-content blockquote, 
+  #reader-content h1, 
+  #reader-content h2, 
+  #reader-content h3, 
+  #reader-content h4, 
+  #reader-content h5, 
+  #reader-content h6 {
+    color: var(--text) !important;
+  }
+  
   #reader-content a, 
   #reader-content a * {
     color: var(--accent) !important;
+    text-decoration: underline;
   }
 
-  #reader-content {
-    flex: 1; max-width: var(--read-width); width: 100%;
-    margin: 0 auto; padding: 32px 24px 64px;
-    font-family: var(--font-read); font-size: var(--read-size);
-    line-height: var(--read-lh);
-  }
   #reader-content h1, #reader-content h2, #reader-content h3 {
-    font-family: var(--font-read); color: var(--text);
-    margin: 2em 0 0.8em; line-height: 1.3; font-weight: bold;
+    font-family: var(--font-read);
+    margin: 1.8em 0 0.8em; line-height: 1.3; font-weight: bold;
   }
   #reader-content h1 { font-size: 1.6em; }
   #reader-content h2 { font-size: 1.3em; }
   #reader-content h3 { font-size: 1.1em; }
-  #reader-content p { margin-bottom: 1.2em; }
+  #reader-content p { margin-bottom: 1.2em; text-align: justify; }
   #reader-content p + p { text-indent: 1.5em; }
   #reader-content p:first-child { text-indent: 0; }
-  #reader-content img { max-width: 100%; border-radius: var(--radius-sm); margin: 1.5em 0; }
-  #reader-content a { color: var(--accent); text-decoration: underline; }
+  #reader-content img { max-width: 100%; height: auto; border-radius: var(--radius-sm); margin: 1.5em 0; display: block; }
+  
   #reader-content blockquote {
-    border-left: 3px solid var(--accent) !important; padding-left: 1.2em;
+    border-left: 4px solid var(--accent) !important; padding-left: 1.2em;
     margin: 1.5em 0; color: var(--text-muted) !important; font-style: italic;
   }
   #reader-content ul, #reader-content ol { padding-left: 1.8em; margin-bottom: 1.2em; }
@@ -270,18 +273,17 @@
   }
   #reader-content th { background: var(--border); font-weight: bold; }
 
-  /* ── TOC Panel ── */
   #toc-panel {
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 300;
     width: min(320px, 88vw); background: var(--surface);
-    border-right: 1px solid var(--border); box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+    border-right: 1px solid var(--border); box-shadow: 4px 0 24px rgba(0,0,0,0.15);
     transform: translateX(-100%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
     display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top);
   }
   #toc-panel.open { transform: translateX(0); }
   #toc-overlay {
-    position: fixed; inset: 0; z-index: 299; background: rgba(0,0,0,0.35);
+    position: fixed; inset: 0; z-index: 299; background: rgba(0,0,0,0.4);
     opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
   }
   #toc-overlay.visible { opacity: 1; pointer-events: all; }
@@ -294,7 +296,7 @@
     flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 0;
   }
   .toc-item {
-    padding: 11px 20px; font-size: 14px; cursor: pointer; color: var(--text-muted);
+    padding: 12px 20px; font-size: 14px; cursor: pointer; color: var(--text-muted);
     transition: all var(--transition); display: block; border: none;
     background: none; width: 100%; text-align: left;
     font-family: var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -304,16 +306,19 @@
   .toc-item[data-depth="1"] { padding-left: 32px; font-size: 13px; }
   .toc-item[data-depth="2"] { padding-left: 44px; font-size: 12px; }
 
-  /* ── Settings Panel ── */
   #settings-panel {
-    position: fixed; top: calc(52px + env(safe-area-inset-top)); right: 0;
-    z-index: 250; width: min(300px, 92vw); background: var(--surface);
-    border: 1px solid var(--border-strong); border-radius: var(--radius) 0 0 var(--radius);
+    position: fixed; bottom: calc(65px + env(safe-area-inset-bottom)); right: 16px;
+    z-index: 250; width: min(320px, 92vw); background: var(--surface);
+    border: 1px solid var(--border-strong); border-radius: var(--radius);
     box-shadow: var(--shadow); padding: 20px;
-    transform: translateX(110%); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    transform: translateY(120%); opacity: 0; transition: transform var(--transition), opacity var(--transition);
+    pointer-events: none;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
   }
-  #settings-panel.open { transform: translateX(0); }
-  .settings-section { margin-bottom: 20px; }
+  #settings-panel.open { transform: translateY(0); opacity: 1; pointer-events: all; }
+  .settings-section { margin-bottom: 18px; }
+  .settings-section:last-child { margin-bottom: 0; }
   .settings-label { font-size: 11px; font-weight: 700; color: var(--text-hint); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
   .btn-group { display: flex; gap: 6px; }
   .btn-pill {
@@ -324,22 +329,21 @@
   }
   .btn-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   .btn-pill:hover:not(.active) { background: var(--border); color: var(--text); }
-  .theme-grid { display: flex; gap: 8px; }
+  .theme-grid { display: flex; gap: 10px; }
   .theme-dot {
-    width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
-    transition: all var(--transition); flex-shrink: 0;
+    width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+    transition: all var(--transition); flex-shrink: 0; position: relative;
   }
-  .theme-dot.active { border-color: var(--accent); transform: scale(1.15); }
-  .theme-dot[data-t="light"] { background: #F7F4EE; border-color: var(--border-strong); }
-  .theme-dot[data-t="dark"] { background: #18181B; }
-  .theme-dot[data-t="sepia"] { background: #F5ECD7; border-color: var(--border-strong); }
-  .settings-slider { width: 100%; margin-top: 4px; accent-color: var(--accent); }
+  .theme-dot.active { border-color: var(--accent); transform: scale(1.1); }
+  .theme-dot[data-t="light"] { background: #F7F4EE; border-color: rgba(0,0,0,0.15); }
+  .theme-dot[data-t="dark"] { background: #121214; }
+  .theme-dot[data-t="sepia"] { background: #F4EAD4; border-color: rgba(0,0,0,0.1); }
+  .settings-slider { width: 100%; margin-top: 4px; accent-color: var(--accent); cursor: pointer; }
   .font-sample {
     font-family: var(--font-read); font-size: var(--read-size);
-    color: var(--text-muted); margin-top: 6px; line-height: 1.5;
+    color: var(--text-muted); margin-top: 6px; line-height: 1.5; text-align: center;
   }
 
-  /* ── Empty / Loading ── */
   #empty-lib { text-align: center; padding: 48px 0; color: var(--text-hint); font-size: 14px; }
 
   .spinner {
@@ -357,44 +361,73 @@
   }
   #loading.visible { display: flex; }
 
-  /* ── Toast ── */
   #toast {
     position: fixed; bottom: calc(100px + env(safe-area-inset-bottom)); left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: var(--text); color: var(--bg);
     padding: 10px 18px; border-radius: 99px; font-size: 13px; font-weight: 500;
     opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 500;
-    white-space: nowrap; max-width: 90vw;
+    white-space: nowrap; max-width: 90vw; box-shadow: var(--shadow);
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ── Tap zones ── */
-  #tap-left, #tap-right {
-    display: block; position: fixed; top: 0; bottom: 0; z-index: 100; cursor: pointer;
-    width: 25%; pointer-events: none;
-  }
-  #reader.active ~ #tap-left, #reader.active ~ #tap-right { pointer-events: auto; }
-  #tap-left { left: 0; }
-  #tap-right { right: 0; }
-
-  /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
 
   @media (max-width: 480px) {
-    #reader-content { padding: 24px 18px 56px; }
+    #reader-content { padding-left: 20px; padding-right: 20px; }
     .home-hero { padding: 24px 0 20px; }
+    #settings-panel { right: 4vw; width: 92vw; }
   }
+
+  .lib-org { display: flex; gap: 8px; margin-bottom: 16px; }
+  .lib-search { flex: 1; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface); color: var(--text); font-family: var(--font-ui); font-size: 13px; outline: none; }
+  .lib-sort { padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface); color: var(--text); font-family: var(--font-ui); font-size: 13px; outline: none; cursor: pointer; }
+
+  #search-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 300;
+    width: min(320px, 88vw); background: var(--surface);
+    border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    transform: translateX(100%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+  }
+  #search-panel.open { transform: translateX(0); }
+  .search-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+  .search-input-wrapper { display: flex; gap: 8px; }
+  .search-input { flex: 1; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 13px; outline: none; }
+  #search-results { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 0; }
+  .search-item { padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; text-align: left; background: none; border: none; width: 100%; display: block; font-family: var(--font-ui); }
+  .search-item:hover { background: var(--border); }
+  .search-item-chap { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
+  .search-item-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+
+  .stats-row { display: flex; justify-content: space-between; padding: 0 max(16px, env(safe-area-inset-left)) 6px; font-size: 11px; color: var(--text-hint); user-select: none; }
+
+  #reader.layout-paginate {
+    overflow-x: auto !important; overflow-y: hidden !important; display: block !important; scroll-snap-type: x mandatory;
+  }
+  #reader.layout-paginate #reader-content {
+    max-width: none !important; column-gap: 48px !important;
+    height: calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    padding-top: calc(20px + env(safe-area-inset-top)) !important; padding-bottom: 20px !important;
+    display: block !important;
+  }
+  #reader.layout-paginate #reader-content > * { scroll-snap-align: start; }
+
+  #brightness-overlay { position: fixed; inset: 0; background: #000000; pointer-events: none; z-index: 9999; opacity: 0; mix-blend-mode: multiply; }
 </style>
 </head>
 <body>
+<div id="brightness-overlay"></div>
 <div id="app">
 
   <div id="topbar">
     <button class="bar-btn" id="btn-toc" aria-label="Table of contents" style="display:none">☰</button>
     <span class="bar-title" id="topbar-title">Leaf</span>
     <button class="bar-btn" id="btn-home" aria-label="Back to library" style="display:none">⌂</button>
+    <button class="bar-btn" id="btn-search-toggle" aria-label="Search" style="display:none">🔍</button>
     <button class="bar-btn" id="btn-settings" aria-label="Reading settings" style="display:none">Aa</button>
   </div>
 
@@ -415,6 +448,14 @@
 
       <div id="library-section" style="display:none">
         <div class="section-title">Library</div>
+        <div class="lib-org">
+          <input type="text" id="lib-search" class="lib-search" placeholder="Search books...">
+          <select id="lib-sort" class="lib-sort">
+            <option value="recent">Recent</option>
+            <option value="title">Title</option>
+            <option value="progress">Progress</option>
+          </select>
+        </div>
         <div id="library-list"></div>
       </div>
       <div id="empty-lib" style="display:none">
@@ -436,6 +477,10 @@
       </div>
       <span class="progress-label right" id="loc-label">p.0</span>
     </div>
+    <div class="stats-row">
+      <span id="stat-time-remaining">-- mins remaining</span>
+      <span id="stat-reading-speed">-- words left</span>
+    </div>
     <div class="chapter-row">
       <button class="nav-btn" id="btn-prev">← Prev</button>
       <span id="chapter-name">Chapter</span>
@@ -452,7 +497,34 @@
     <div id="toc-list"></div>
   </div>
 
+  <div id="search-panel" role="dialog" aria-label="In-book search">
+    <div class="search-header">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <h2 style="font-size:16px; font-weight:700;">Search</h2>
+        <button class="bar-btn" id="btn-search-close" aria-label="Close">✕</button>
+      </div>
+      <div class="search-input-wrapper">
+        <input type="text" id="search-input" class="search-input" placeholder="Search text...">
+      </div>
+    </div>
+    <div id="search-results"></div>
+  </div>
+
   <div id="settings-panel" role="dialog" aria-label="Reading settings">
+    <div class="settings-section">
+      <div class="settings-label">Mode</div>
+      <div class="btn-group">
+        <button class="btn-pill active" data-layout="scroll">Scroll</button>
+        <button class="btn-pill" data-layout="paginate">Paginate</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">Brightness</div>
+      <input type="range" class="settings-slider" id="brightness-slider" min="0" max="80" step="1" value="0">
+    </div>
+    <div class="settings-section">
+      <button class="btn-pill" id="btn-fullscreen" style="width:100%; border-radius:var(--radius-sm);">Toggle Fullscreen</button>
+    </div>
     <div class="settings-section">
       <div class="settings-label">Theme</div>
       <div class="theme-grid">
@@ -488,9 +560,6 @@
     </div>
   </div>
 
-  <div id="tap-left"></div>
-  <div id="tap-right"></div>
-
   <div id="loading">
     <div class="spinner"></div>
     <span>Opening book…</span>
@@ -503,20 +572,19 @@
 <script>
 'use strict';
 
-// ── State ──────────────────────────────────────────────────────────────────
 const state = {
   books: [],
   current: null,
   chapterIdx: 0,
   settings: {
-    theme: 'light', fontSize: 18, lineHeight: 185, maxWidth: 640, fontFamily: 'serif'
+    theme: 'light', fontSize: 18, lineHeight: 185, maxWidth: 640, fontFamily: 'serif', layout: 'scroll', brightness: 0
   },
   barsVisible: true,
   settingsOpen: false,
   tocOpen: false,
+  searchOpen: false
 };
 
-// ── DOM ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className=cls; if(txt) e.textContent=txt; return e; };
 
@@ -540,7 +608,6 @@ const pctLabel     = $('pct-label');
 const locLabel     = $('loc-label');
 const chapterName  = $('chapter-name');
 
-// ── Persist ────────────────────────────────────────────────────────────────
 function saveState() {
   try {
     const data = { settings: state.settings, books: state.books.map(b => ({
@@ -564,7 +631,6 @@ function loadState() {
   } catch(e) {}
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg) {
   toastEl.textContent = msg;
@@ -573,10 +639,16 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
 }
 
-// ── Settings Apply ─────────────────────────────────────────────────────────
 function applySettings() {
   const s = state.settings;
   document.documentElement.setAttribute('data-theme', s.theme);
+  
+  if (s.theme === 'dark') {
+    document.documentElement.style.colorScheme = 'dark';
+  } else {
+    document.documentElement.style.colorScheme = 'light';
+  }
+
   document.documentElement.style.setProperty('--read-size', s.fontSize + 'px');
   document.documentElement.style.setProperty('--read-lh', (s.lineHeight/100).toFixed(2));
   document.documentElement.style.setProperty('--read-width', s.maxWidth + 'px');
@@ -592,9 +664,20 @@ function applySettings() {
   document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === s.theme));
   document.querySelectorAll('[data-margin]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.margin) === s.maxWidth));
   document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', b.dataset.font === s.fontFamily));
+  document.querySelectorAll('[data-layout]').forEach(b => b.classList.toggle('active', b.dataset.layout === s.layout));
+
+  $('brightness-slider').value = s.brightness;
+  $('brightness-overlay').style.opacity = s.brightness / 100;
+
+  if (s.layout === 'paginate') {
+    readerEl.classList.add('layout-paginate');
+    readerContent.style.columnWidth = (window.innerWidth - 48) + 'px';
+  } else {
+    readerEl.classList.remove('layout-paginate');
+    readerContent.style.columnWidth = 'auto';
+  }
 }
 
-// ── EPUB Parsing ───────────────────────────────────────────────────────────
 async function parseEpub(arrayBuffer) {
   const zip = await JSZip.loadAsync(arrayBuffer);
 
@@ -747,7 +830,6 @@ function resolvePath(base, relative) {
   return parts.join('/');
 }
 
-// ── Book DB (IndexedDB) ───────────────────────────────
 let db;
 function openDB() {
   return new Promise((res, rej) => {
@@ -780,7 +862,6 @@ function deleteBook(id) {
   });
 }
 
-// ── Library UI ─────────────────────────────────────────────────────────────
 function renderLibrary() {
   if (!state.books.length) {
     librarySection.style.display = 'none';
@@ -790,7 +871,23 @@ function renderLibrary() {
   librarySection.style.display = '';
   emptyLib.style.display = 'none';
   libraryList.innerHTML = '';
-  [...state.books].sort((a,b) => b.addedAt - a.addedAt).forEach(book => {
+  
+  let filtered = [...state.books];
+  const query = $('lib-search').value.trim().toLowerCase();
+  if (query) {
+    filtered = filtered.filter(b => b.title.toLowerCase().includes(query) || (b.author && b.author.toLowerCase().includes(query)));
+  }
+
+  const sortBy = $('lib-sort').value;
+  if (sortBy === 'recent') {
+    filtered.sort((a,b) => b.addedAt - a.addedAt);
+  } else if (sortBy === 'title') {
+    filtered.sort((a,b) => a.title.localeCompare(b.title));
+  } else if (sortBy === 'progress') {
+    filtered.sort((a,b) => (b.progress || 0) - (a.progress || 0));
+  }
+
+  filtered.forEach(book => {
     const card = el('div', 'book-card');
     card.setAttribute('role', 'button');
     card.setAttribute('tabindex', '0');
@@ -835,7 +932,6 @@ function renderLibrary() {
   });
 }
 
-// ── Open Book ──────────────────────────────────────────────────────────────
 async function openBook(id) {
   const meta = state.books.find(b => b.id === id);
   if (!meta) return;
@@ -860,7 +956,6 @@ async function openBook(id) {
     state.chapterIdx = meta.chapterIdx || 0;
 
     showReader();
-    // Re-calculate the initial scroll position based on book's saved global progress
     const scrollPct = calculateScrollPctFromProgress(meta.progress || 0);
     renderChapter(state.chapterIdx, scrollPct);
     renderTOC();
@@ -872,14 +967,12 @@ async function openBook(id) {
   }
 }
 
-// Helper to determine inner-chapter scroll position based on library progress%
 function calculateScrollPctFromProgress(progPct) {
   if (!state.current || !state.current.chapters) return 0;
   const exactChapter = (progPct / 100) * state.current.chapters.length;
   return exactChapter - Math.floor(exactChapter);
 }
 
-// ── Reader UI ──────────────────────────────────────────────────────────────
 function showReader() {
   homeEl.style.display = 'none';
   readerEl.classList.add('active');
@@ -887,10 +980,15 @@ function showReader() {
   $('btn-toc').style.display = '';
   $('btn-home').style.display = '';
   $('btn-settings').style.display = '';
-  $('tap-left').style.display = 'block';
-  $('tap-right').style.display = 'block';
+  $('btn-search-toggle').style.display = '';
+  
+  state.barsVisible = true;
+  topbar.classList.remove('hidden');
+  bottombar.classList.remove('hidden');
+  
   $('topbar-title').textContent = state.current.title;
   readerEl.scrollTop = 0;
+  readerEl.scrollLeft = 0;
 }
 
 function showHome() {
@@ -902,10 +1000,9 @@ function showHome() {
   $('btn-toc').style.display = 'none';
   $('btn-home').style.display = 'none';
   $('btn-settings').style.display = 'none';
-  $('tap-left').style.display = 'none';
-  $('tap-right').style.display = 'none';
+  $('btn-search-toggle').style.display = 'none';
   $('topbar-title').textContent = 'Leaf';
-  closeTOC(); closeSettings();
+  closeTOC(); closeSettings(); closeSearch();
   renderLibrary();
 }
 
@@ -919,7 +1016,6 @@ function renderChapter(idx, scrollPct = 0) {
   const chapter = book.chapters[idx];
   readerContent.innerHTML = chapter.html;
 
-  // Clean inline styles but keep structure
   readerContent.querySelectorAll('[style]').forEach(el => {
     const keep = [];
     const style = el.getAttribute('style');
@@ -929,23 +1025,32 @@ function renderChapter(idx, scrollPct = 0) {
     else el.removeAttribute('style');
   });
 
-  // Apply target scroll accurately after DOM paints
+  if (state.settings.layout === 'paginate') {
+    readerContent.style.columnWidth = (window.innerWidth - 48) + 'px';
+  }
+
   setTimeout(() => {
+    const isPag = state.settings.layout === 'paginate';
     if (scrollPct > 0) {
-      const sh = readerEl.scrollHeight;
-      const ch = readerEl.clientHeight;
-      readerEl.scrollTop = scrollPct * (sh - ch);
+      if (isPag) {
+        const sw = readerEl.scrollWidth;
+        const cw = readerEl.clientWidth;
+        readerEl.scrollLeft = scrollPct * (sw - cw);
+      } else {
+        const sh = readerEl.scrollHeight;
+        const ch = readerEl.clientHeight;
+        readerEl.scrollTop = scrollPct * (sh - ch);
+      }
     } else {
       readerEl.scrollTop = 0;
+      readerEl.scrollLeft = 0;
     }
     updateProgress();
-  }, 10);
+  }, 30);
 
-  // Update nav
   $('btn-prev').disabled = idx === 0;
   $('btn-next').disabled = idx === book.chapters.length - 1;
 
-  // Chapter name from TOC
   const tocMatch = book.tocItems?.find(t => t.href && chapter.href && chapter.href.includes(t.href.split('#')[0]));
   const chapTitle = tocMatch?.label || chapter.title || `Chapter ${idx+1}`;
   chapterName.textContent = chapTitle;
@@ -954,22 +1059,19 @@ function renderChapter(idx, scrollPct = 0) {
   updateTOCActive(idx);
 }
 
-// Global Progress Updater - Calculates dynamically as you scroll through the chapter
 function updateProgress() {
   const book = state.current;
   if (!book || !book.chapters) return;
   const totalChaps = book.chapters.length;
   if (totalChaps === 0) return;
 
-  const st = readerEl.scrollTop;
-  const sh = readerEl.scrollHeight;
-  const ch = readerEl.clientHeight;
+  const isPag = state.settings.layout === 'paginate';
+  const st = isPag ? readerEl.scrollLeft : readerEl.scrollTop;
+  const sh = isPag ? readerEl.scrollWidth : readerEl.scrollHeight;
+  const ch = isPag ? readerEl.clientWidth : readerEl.clientHeight;
   const scrollable = sh - ch;
   
-  // What percentage of the current chapter have we scrolled?
   const chapterScrollPct = scrollable > 0 ? (st / scrollable) : 0;
-  
-  // Calculate true book percentage
   const overallPct = Math.max(0, Math.min(100, ((state.chapterIdx + chapterScrollPct) / totalChaps) * 100));
 
   progressFill.style.width = overallPct + '%';
@@ -977,11 +1079,30 @@ function updateProgress() {
   pctLabel.textContent = Math.round(overallPct) + '%';
   locLabel.textContent = `${state.chapterIdx+1}/${totalChaps}`;
 
-  // Assign to global book object so the library displays correctly
   book.progress = Math.round(overallPct);
+
+  let remainingWords = 0;
+  for (let i = state.chapterIdx; i < book.chapters.length; i++) {
+    const chap = book.chapters[i];
+    if (chap.wordCount === undefined) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = chap.html;
+      const text = tempDiv.textContent || '';
+      chap.wordCount = text.split(/\s+/).filter(Boolean).length;
+    }
+    if (i === state.chapterIdx) {
+      remainingWords += Math.round(chap.wordCount * (1 - chapterScrollPct));
+    } else {
+      remainingWords += chap.wordCount;
+    }
+  }
+
+  const readingWPM = 200;
+  const minsRemaining = Math.ceil(remainingWords / readingWPM);
+  $('stat-time-remaining').textContent = minsRemaining > 0 ? `${minsRemaining} min${minsRemaining > 1 ? 's' : ''} remaining` : 'Finished';
+  $('stat-reading-speed').textContent = `${remainingWords.toLocaleString()} words left`;
 }
 
-// ── TOC ────────────────────────────────────────────────────────────────────
 function renderTOC() {
   const book = state.current;
   tocList.innerHTML = '';
@@ -1017,14 +1138,61 @@ function updateTOCActive(chapterIdx) {
 }
 
 function openTOC() { tocPanel.classList.add('open'); tocOverlay.classList.add('visible'); state.tocOpen = true; }
-function closeTOC() { tocPanel.classList.remove('open'); tocOverlay.classList.remove('visible'); state.tocOpen = false; }
+function closeTOC() { tocPanel.classList.remove('open'); if(!state.searchOpen) tocOverlay.classList.remove('visible'); state.tocOpen = false; }
 function toggleTOC() { state.tocOpen ? closeTOC() : openTOC(); }
 
 function openSettings() { settingsPanel.classList.add('open'); state.settingsOpen = true; }
 function closeSettings() { settingsPanel.classList.remove('open'); state.settingsOpen = false; }
 function toggleSettings() { state.settingsOpen ? closeSettings() : openSettings(); }
 
-// ── File Import ────────────────────────────────────────────────────────────
+function openSearch() { $('search-panel').classList.add('open'); tocOverlay.classList.add('visible'); state.searchOpen = true; $('search-input').focus(); }
+function closeSearch() { $('search-panel').classList.remove('open'); if(!state.tocOpen) tocOverlay.classList.remove('visible'); state.searchOpen = false; }
+function toggleSearch() { state.searchOpen ? closeSearch() : openSearch(); }
+
+function performSearch() {
+  const query = $('search-input').value.trim().toLowerCase();
+  const resultsContainer = $('search-results');
+  resultsContainer.innerHTML = '';
+  if (!query || !state.current || !state.current.chapters) return;
+
+  state.current.chapters.forEach((chap, cIdx) => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = chap.html;
+    const text = tempDiv.textContent || '';
+    
+    let index = text.toLowerCase().indexOf(query);
+    while (index !== -1) {
+      const start = Math.max(0, index - 40);
+      const end = Math.min(text.length, index + query.length + 40);
+      const snippet = text.substring(start, end).replace(/\s+/g, ' ');
+
+      const item = el('button', 'search-item');
+      const tocMatch = state.current.tocItems?.find(t => t.href && chap.href && chap.href.includes(t.href.split('#')[0]));
+      const chapTitle = tocMatch?.label || chap.title || `Chapter ${cIdx + 1}`;
+
+      const itemChap = el('div', 'search-item-chap', chapTitle);
+      const itemText = el('div', 'search-item-text');
+      itemText.innerHTML = '...' + snippet.replace(new RegExp(query, 'gi'), match => `<strong>${match}</strong>`) + '...';
+      
+      item.appendChild(itemChap);
+      item.appendChild(itemText);
+
+      const targetPct = index / text.length;
+      item.addEventListener('click', () => {
+        renderChapter(cIdx, targetPct);
+        closeSearch();
+      });
+
+      resultsContainer.appendChild(item);
+      index = text.toLowerCase().indexOf(query, index + 1);
+    }
+  });
+
+  if (!resultsContainer.children.length) {
+    resultsContainer.appendChild(el('div', 'toc-item', 'No matches found'));
+  }
+}
+
 async function importFile(file) {
   if (!file || !file.name.endsWith('.epub')) { toast('Please open an .epub file'); return; }
   if (file.size > 80 * 1024 * 1024) { toast('File is too large (max 80 MB)'); return; }
@@ -1059,7 +1227,6 @@ async function importFile(file) {
   }
 }
 
-// ── Event Wiring ───────────────────────────────────────────────────────────
 const fileInput = $('file-input');
 const dropZone  = $('drop-zone');
 
@@ -1070,74 +1237,75 @@ fileInput.addEventListener('change', e => { if(e.target.files[0]) importFile(e.t
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if (f) importFile(f); });
-window.addEventListener('dragover', e => e.preventDefault());
-window.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) importFile(f); });
 
 $('btn-prev').addEventListener('click', () => { if(state.chapterIdx > 0) renderChapter(state.chapterIdx - 1); });
 $('btn-next').addEventListener('click', () => { if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1); });
-$('btn-toc').addEventListener('click', () => { closeSettings(); toggleTOC(); });
+$('btn-toc').addEventListener('click', () => { closeSettings(); closeSearch(); toggleTOC(); });
 $('btn-toc-close').addEventListener('click', closeTOC);
 $('btn-home').addEventListener('click', showHome);
-$('btn-settings').addEventListener('click', () => { closeTOC(); toggleSettings(); });
-tocOverlay.addEventListener('click', closeTOC);
+$('btn-settings').addEventListener('click', (e) => { e.stopPropagation(); closeTOC(); closeSearch(); toggleSettings(); });
+$('btn-search-toggle').addEventListener('click', (e) => { e.stopPropagation(); closeTOC(); closeSettings(); toggleSearch(); });
+$('btn-search-close').addEventListener('click', closeSearch);
+$('search-input').addEventListener('input', performSearch);
+tocOverlay.addEventListener('click', () => { closeTOC(); closeSearch(); });
 
+$('lib-search').addEventListener('input', renderLibrary);
+$('lib-sort').addEventListener('change', renderLibrary);
 
-// UX Enhance: Tap zones now gracefully scroll down the page, jumping chapters only when at bounds
-$('tap-right').addEventListener('click', () => {
-  const sh = readerEl.scrollHeight, st = readerEl.scrollTop, ch = readerEl.clientHeight;
-  if (st + ch >= sh - 10) {
-    if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
+readerEl.addEventListener('click', e => {
+  if (e.target.closest('button, a, input, [role="slider"], #settings-panel, #toc-panel, #search-panel')) return;
+  if (window.getSelection().toString().trim() !== '') return;
+  
+  const x = e.clientX;
+  const w = window.innerWidth;
+  const isPag = state.settings.layout === 'paginate';
+  
+  if (x < w * 0.15) {
+    if (isPag) {
+      if (readerEl.scrollLeft <= 10) {
+        if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1);
+      } else {
+        readerEl.scrollBy({ left: -readerEl.clientWidth, behavior: 'smooth' });
+      }
+    } else {
+      if (readerEl.scrollTop <= 10) {
+        if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1);
+      } else {
+        readerEl.scrollBy({ top: -(readerEl.clientHeight * 0.85), behavior: 'smooth' });
+      }
+    }
+  } else if (x > w * 0.85) {
+    if (isPag) {
+      const sw = readerEl.scrollWidth, sl = readerEl.scrollLeft, cw = readerEl.clientWidth;
+      if (sl + cw >= sw - 10) {
+        if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
+      } else {
+        readerEl.scrollBy({ left: readerEl.clientWidth, behavior: 'smooth' });
+      }
+    } else {
+      const sh = readerEl.scrollHeight, st = readerEl.scrollTop, ch = readerEl.clientHeight;
+      if (st + ch >= sh - 10) {
+        if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
+      } else {
+        readerEl.scrollBy({ top: ch * 0.85, behavior: 'smooth' });
+      }
+    }
   } else {
-    readerEl.scrollBy({ top: ch * 0.85, behavior: 'smooth' });
-  }
-});
-
-$('tap-left').addEventListener('click', () => {
-  if (readerEl.scrollTop <= 10) {
-    if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1); // Goes to bottom of prev chapter
-  } else {
-    readerEl.scrollBy({ top: -(readerEl.clientHeight * 0.85), behavior: 'smooth' });
-  }
-});
-
-
-// Auto-hide bars & Dynamic Progress Scroll
-let lastScroll = 0, scrollTimer;
-let isDraggingProgress = false;
-
-readerEl.addEventListener('scroll', () => {
-  if (!isDraggingProgress) updateProgress();
-
-  const y = readerEl.scrollTop;
-  const dy = y - lastScroll;
-  lastScroll = y;
-  
-  if (Math.abs(dy) < 4) return;
-  const goHide = dy > 0 && y > 80;
-  
-  topbar.classList.toggle('hidden', goHide);
-  bottombar.classList.toggle('hidden', goHide);
-  state.barsVisible = !goHide;
-  
-  clearTimeout(scrollTimer);
-  scrollTimer = setTimeout(() => {
-    topbar.classList.remove('hidden');
-    bottombar.classList.remove('hidden');
-  }, 3000);
-}, {passive: true});
-
-readerContent.addEventListener('click', e => {
-  if (state.settingsOpen) { closeSettings(); return; }
-  if (state.tocOpen) { closeTOC(); return; }
-  const xRatio = e.clientX / window.innerWidth;
-  if (xRatio > 0.25 && xRatio < 0.75) {
+    if (state.settingsOpen) { closeSettings(); return; }
+    if (state.tocOpen) { closeTOC(); return; }
+    if (state.searchOpen) { closeSearch(); return; }
+    
     state.barsVisible = !state.barsVisible;
     topbar.classList.toggle('hidden', !state.barsVisible);
     bottombar.classList.toggle('hidden', !state.barsVisible);
   }
 });
 
-// Fixed Pointer Events Drag Slider: Smooth Visual Seeking
+let isDraggingProgress = false;
+readerEl.addEventListener('scroll', () => {
+  if (!isDraggingProgress) updateProgress();
+}, {passive: true});
+
 const track = $('progress-track');
 let dragPct = 0;
 
@@ -1178,27 +1346,51 @@ function executeSeek(pct) {
   if (targetIdx !== state.chapterIdx) {
     renderChapter(targetIdx, chapterScrollPct);
   } else {
-    const sh = readerEl.scrollHeight, ch = readerEl.clientHeight;
-    readerEl.scrollTop = chapterScrollPct * (sh - ch);
+    const isPag = state.settings.layout === 'paginate';
+    if (isPag) {
+      const sw = readerEl.scrollWidth, cw = readerEl.clientWidth;
+      readerEl.scrollLeft = chapterScrollPct * (sw - cw);
+    } else {
+      const sh = readerEl.scrollHeight, ch = readerEl.clientHeight;
+      readerEl.scrollTop = chapterScrollPct * (sh - ch);
+    }
     updateProgress();
   }
 }
 
-// Keyboard / Swipe Shortcuts
 document.addEventListener('keydown', e => {
   if (!state.current) return;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
-    $('tap-right').click();
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-    $('tap-left').click();
+  const isPag = state.settings.layout === 'paginate';
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+    if (isPag) {
+      const sw = readerEl.scrollWidth, sl = readerEl.scrollLeft, cw = readerEl.clientWidth;
+      if (sl + cw >= sw - 10) {
+        if (state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
+      } else {
+        readerEl.scrollBy({ left: readerEl.clientWidth, behavior: 'smooth' });
+      }
+    } else {
+      readerEl.scrollBy({ top: readerEl.clientHeight * 0.85, behavior: 'smooth' });
+    }
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    if (isPag) {
+      if (readerEl.scrollLeft <= 10) {
+        if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1);
+      } else {
+        readerEl.scrollBy({ left: -readerEl.clientWidth, behavior: 'smooth' });
+      }
+    } else {
+      readerEl.scrollBy({ top: -(readerEl.clientHeight * 0.85), behavior: 'smooth' });
+    }
   } else if (e.key === 'Escape') {
-    if (state.settingsOpen) closeSettings(); else if (state.tocOpen) closeTOC(); else showHome();
+    if (state.settingsOpen) closeSettings(); else if (state.tocOpen) closeTOC(); else if (state.searchOpen) closeSearch(); else showHome();
   }
 });
 
 let touchStartX = 0, touchStartY = 0;
 readerEl.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, {passive: true});
 readerEl.addEventListener('touchend', e => {
+  if (window.getSelection().toString().trim() !== '') return;
   const dx = e.changedTouches[0].clientX - touchStartX;
   const dy = e.changedTouches[0].clientY - touchStartY;
   if (Math.abs(dx) > Math.abs(dy) * 2 && Math.abs(dx) > 60) {
@@ -1209,6 +1401,22 @@ readerEl.addEventListener('touchend', e => {
 
 $('font-size-slider').addEventListener('input', e => { state.settings.fontSize = parseInt(e.target.value); applySettings(); saveState(); });
 $('line-height-slider').addEventListener('input', e => { state.settings.lineHeight = parseInt(e.target.value); applySettings(); saveState(); });
+$('brightness-slider').addEventListener('input', e => { state.settings.brightness = parseInt(e.target.value); applySettings(); saveState(); });
+
+$('btn-fullscreen').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+window.addEventListener('resize', () => {
+  if (state.current) {
+    applySettings();
+    renderChapter(state.chapterIdx, calculateScrollPctFromProgress(state.current.progress || 0));
+  }
+});
 
 document.querySelectorAll('.theme-dot').forEach(dot => {
   dot.addEventListener('click', () => { state.settings.theme = dot.dataset.t; applySettings(); saveState(); });
@@ -1229,9 +1437,21 @@ document.querySelectorAll('[data-font]').forEach(btn => {
   });
 });
 
-document.addEventListener('click', e => { if (state.settingsOpen && !settingsPanel.contains(e.target) && e.target !== $('btn-settings')) closeSettings(); });
+document.querySelectorAll('[data-layout]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.settings.layout = btn.dataset.layout;
+    applySettings();
+    saveState();
+    renderChapter(state.chapterIdx, 0);
+  });
+});
 
-// ── Init ───────────────────────────────────────────────────────────────────
+document.addEventListener('click', e => { 
+  if (state.settingsOpen && !settingsPanel.contains(e.target) && !e.target.closest('#btn-settings')) {
+    closeSettings(); 
+  }
+});
+
 async function init() {
   await openDB();
   loadState();
