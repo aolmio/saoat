@@ -106,8 +106,12 @@
     padding-right: max(16px, env(safe-area-inset-right));
     box-shadow: var(--shadow);
     transition: transform var(--transition), opacity var(--transition);
+    /* FIX: use visibility+opacity instead of display:none to allow transitions */
   }
   #bottombar.hidden { transform: translateY(100%); opacity: 0; pointer-events: none; }
+  /* FIX: separate reader-visible state from bar-visible state */
+  #bottombar.reader-hidden { display: none; }
+
   .progress-row {
     display: flex; align-items: center; gap: 10px; padding: 12px 0 4px;
   }
@@ -117,14 +121,21 @@
     flex: 1; height: 4px; background: var(--border-strong); border-radius: 99px; cursor: pointer;
     position: relative; touch-action: none; padding: 10px 0; background-clip: content-box;
   }
-  #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; }
+  #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.1s ease; }
   #progress-thumb {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
     width: 14px; height: 14px; border-radius: 50%;
     background: var(--accent); border: 2px solid var(--surface);
     box-shadow: 0 0 0 1px var(--accent);
-    cursor: grab;
+    cursor: grab; transition: left 0.1s ease;
+    /* FIX: clamp thumb so it can't overflow the track */
+    max-left: calc(100% - 7px);
   }
+  /* FIX: remove transition during drag */
+  #progress-thumb.dragging,
+  #progress-fill.dragging { transition: none; }
+  #progress-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.2); }
+
   .chapter-row {
     display: flex; align-items: center; justify-content: space-between;
     padding: 6px 0 12px; gap: 8px;
@@ -147,6 +158,9 @@
     padding-top: calc(56px + env(safe-area-inset-top));
     overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
+  /* FIX: hide home cleanly */
+  #home.reader-active { display: none; }
+
   #home-inner { padding: 24px 20px; max-width: 480px; margin: 0 auto; width: 100%; }
 
   .home-hero { padding: 40px 0 32px; text-align: center; }
@@ -202,7 +216,7 @@
   .book-prog {
     height: 3px; background: var(--border-strong); border-radius: 99px; margin-top: 8px;
   }
-  .book-prog-fill { height: 100%; background: var(--accent); border-radius: 99px; }
+  .book-prog-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s ease; }
   .book-delete {
     width: 28px; height: 28px; border: none; background: none; cursor: pointer;
     border-radius: 50%; color: var(--text-hint); font-size: 16px;
@@ -211,17 +225,19 @@
   }
   .book-delete:hover { background: #FEE2E2; color: #DC2626; }
 
+  /* FIX: reader uses class toggling only, no inline display style fighting */
   #reader {
     display: none; flex: 1; flex-direction: column;
     overflow-y: auto; -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     width: 100%; height: 100%;
+    position: fixed; inset: 0;
   }
   #reader.active { display: flex; }
   
   #reader-content {
     flex: 1; max-width: var(--read-width); width: 100%;
-    margin: 0 auto; padding: calc(80px + env(safe-area-inset-top)) 24px calc(110px + env(safe-area-inset-bottom));
+    margin: 0 auto; padding: calc(80px + env(safe-area-inset-top)) 24px calc(120px + env(safe-area-inset-bottom));
     font-family: var(--font-read); font-size: var(--read-size);
     line-height: var(--read-lh);
     color: var(--text);
@@ -273,6 +289,13 @@
   }
   #reader-content th { background: var(--border); font-weight: bold; }
 
+  /* Shared overlay for TOC and Search — FIX: one overlay, managed by reference count */
+  #panel-overlay {
+    position: fixed; inset: 0; z-index: 299; background: rgba(0,0,0,0.4);
+    opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
+  }
+  #panel-overlay.visible { opacity: 1; pointer-events: all; }
+
   #toc-panel {
     position: fixed; top: 0; left: 0; bottom: 0; z-index: 300;
     width: min(320px, 88vw); background: var(--surface);
@@ -282,11 +305,7 @@
     padding-top: env(safe-area-inset-top);
   }
   #toc-panel.open { transform: translateX(0); }
-  #toc-overlay {
-    position: fixed; inset: 0; z-index: 299; background: rgba(0,0,0,0.4);
-    opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
-  }
-  #toc-overlay.visible { opacity: 1; pointer-events: all; }
+
   .toc-header {
     padding: 16px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
@@ -398,19 +417,27 @@
   .search-input-wrapper { display: flex; gap: 8px; }
   .search-input { flex: 1; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 13px; outline: none; }
   #search-results { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 0; }
-  .search-item { padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; text-align: left; background: none; border: none; width: 100%; display: block; font-family: var(--font-ui); }
+  /* FIX: search-item had conflicting border: none overriding border-bottom */
+  .search-item {
+    padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer;
+    text-align: left; background: none; width: 100%; display: block;
+    font-family: var(--font-ui);
+  }
   .search-item:hover { background: var(--border); }
   .search-item-chap { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
   .search-item-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+  /* FIX: search result count display */
+  #search-count { font-size: 12px; color: var(--text-hint); padding: 8px 20px 0; }
 
   .stats-row { display: flex; justify-content: space-between; padding: 0 max(16px, env(safe-area-inset-left)) 6px; font-size: 11px; color: var(--text-hint); user-select: none; }
 
+  /* FIX: paginate layout height accounts for full bottom bar (~110px + stats row) */
   #reader.layout-paginate {
     overflow-x: auto !important; overflow-y: hidden !important; display: block !important; scroll-snap-type: x mandatory;
   }
   #reader.layout-paginate #reader-content {
     max-width: none !important; column-gap: 48px !important;
-    height: calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    height: calc(100vh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
     padding-top: calc(20px + env(safe-area-inset-top)) !important; padding-bottom: 20px !important;
     display: block !important;
   }
@@ -442,7 +469,7 @@
       <div id="drop-zone" role="button" tabindex="0" aria-label="Open EPUB file">
         <div class="drop-icon">📖</div>
         <div class="drop-title">Open an EPUB</div>
-        <div class="drop-sub">Tap to browse files, or drag & drop here</div>
+        <div class="drop-sub">Tap to browse files, or drag &amp; drop here</div>
         <input type="file" id="file-input" accept=".epub,application/epub+zip">
       </div>
 
@@ -468,10 +495,11 @@
     <div id="reader-content"></div>
   </div>
 
-  <div id="bottombar" style="display:none">
+  <!-- FIX: bottombar starts hidden via class, not inline display:none -->
+  <div id="bottombar" class="reader-hidden">
     <div class="progress-row">
       <span class="progress-label" id="pct-label">0%</span>
-      <div id="progress-track" role="slider" aria-label="Reading progress">
+      <div id="progress-track" role="slider" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <div id="progress-fill" style="width:0%"></div>
         <div id="progress-thumb" style="left:0%"></div>
       </div>
@@ -488,7 +516,9 @@
     </div>
   </div>
 
-  <div id="toc-overlay"></div>
+  <!-- FIX: single overlay element for both TOC and Search -->
+  <div id="panel-overlay"></div>
+
   <div id="toc-panel" role="dialog" aria-label="Table of contents">
     <div class="toc-header">
       <h2>Contents</h2>
@@ -507,6 +537,7 @@
         <input type="text" id="search-input" class="search-input" placeholder="Search text...">
       </div>
     </div>
+    <div id="search-count"></div>
     <div id="search-results"></div>
   </div>
 
@@ -586,35 +617,47 @@ const state = {
 };
 
 const $ = id => document.getElementById(id);
-const el = (tag, cls, txt) => { const e = document.createElement(tag); if(cls) e.className=cls; if(txt) e.textContent=txt; return e; };
+const el = (tag, cls, txt) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt !== undefined) e.textContent = txt;
+  return e;
+};
 
-const homeEl       = $('home');
-const readerEl     = $('reader');
-const readerContent= $('reader-content');
-const topbar       = $('topbar');
-const bottombar    = $('bottombar');
-const tocPanel     = $('toc-panel');
-const tocOverlay   = $('toc-overlay');
-const settingsPanel= $('settings-panel');
-const libraryList  = $('library-list');
-const librarySection=$('library-section');
-const emptyLib     = $('empty-lib');
-const tocList      = $('toc-list');
-const loadingEl    = $('loading');
-const toastEl      = $('toast');
-const progressFill = $('progress-fill');
-const progressThumb= $('progress-thumb');
-const pctLabel     = $('pct-label');
-const locLabel     = $('loc-label');
-const chapterName  = $('chapter-name');
+const homeEl        = $('home');
+const readerEl      = $('reader');
+const readerContent = $('reader-content');
+const topbar        = $('topbar');
+const bottombar     = $('bottombar');
+const tocPanel      = $('toc-panel');
+// FIX: renamed from toc-overlay to panel-overlay (shared)
+const panelOverlay  = $('panel-overlay');
+const settingsPanel = $('settings-panel');
+const libraryList   = $('library-list');
+const librarySection= $('library-section');
+const emptyLib      = $('empty-lib');
+const tocList       = $('toc-list');
+const loadingEl     = $('loading');
+const toastEl       = $('toast');
+const progressFill  = $('progress-fill');
+const progressThumb = $('progress-thumb');
+const pctLabel      = $('pct-label');
+const locLabel      = $('loc-label');
+const chapterName   = $('chapter-name');
+
+// ── State persistence ────────────────────────────────────────────────────────
 
 function saveState() {
   try {
-    const data = { settings: state.settings, books: state.books.map(b => ({
-      id: b.id, title: b.title, author: b.author, addedAt: b.addedAt,
-      progress: b.progress, chapterIdx: b.chapterIdx,
-      tocItems: b.tocItems, chapterCount: b.chapters?.length || 0
-    }))};
+    const data = {
+      settings: state.settings,
+      books: state.books.map(b => ({
+        id: b.id, title: b.title, author: b.author, addedAt: b.addedAt,
+        progress: b.progress, chapterIdx: b.chapterIdx,
+        tocItems: b.tocItems, chapterCount: b.chapters?.length || 0,
+        coverBlob: b.coverBlob || null,
+      }))
+    };
     localStorage.setItem('leaf_state', JSON.stringify(data));
   } catch(e) {}
 }
@@ -626,10 +669,12 @@ function loadState() {
     const data = JSON.parse(raw);
     if (data.settings) Object.assign(state.settings, data.settings);
     if (data.books) {
-      state.books = data.books.map(b => ({...b, chapters: null, coverBlob: null}));
+      state.books = data.books.map(b => ({ ...b, chapters: null, _parsed: null }));
     }
   } catch(e) {}
 }
+
+// ── Toast ────────────────────────────────────────────────────────────────────
 
 let toastTimer;
 function toast(msg) {
@@ -639,27 +684,28 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
 }
 
+// ── Settings / theming ───────────────────────────────────────────────────────
+
 function applySettings() {
   const s = state.settings;
   document.documentElement.setAttribute('data-theme', s.theme);
-  
-  if (s.theme === 'dark') {
-    document.documentElement.style.colorScheme = 'dark';
-  } else {
-    document.documentElement.style.colorScheme = 'light';
-  }
+  document.documentElement.style.colorScheme = s.theme === 'dark' ? 'dark' : 'light';
 
   document.documentElement.style.setProperty('--read-size', s.fontSize + 'px');
-  document.documentElement.style.setProperty('--read-lh', (s.lineHeight/100).toFixed(2));
+  document.documentElement.style.setProperty('--read-lh', (s.lineHeight / 100).toFixed(2));
   document.documentElement.style.setProperty('--read-width', s.maxWidth + 'px');
 
-  const fontMap = { serif: "Georgia, 'Times New Roman', serif", sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", mono: "'Courier New', Courier, monospace" };
+  const fontMap = {
+    serif: "Georgia, 'Times New Roman', serif",
+    sans:  "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+    mono:  "'Courier New', Courier, monospace"
+  };
   document.documentElement.style.setProperty('--font-read', fontMap[s.fontFamily] || fontMap.serif);
 
-  $('font-size-slider').value = s.fontSize;
+  $('font-size-slider').value  = s.fontSize;
   $('line-height-slider').value = s.lineHeight;
-  $('font-sample').style.fontSize = s.fontSize + 'px';
-  $('font-sample').style.lineHeight = (s.lineHeight/100).toFixed(2);
+  $('font-sample').style.fontSize   = s.fontSize + 'px';
+  $('font-sample').style.lineHeight = (s.lineHeight / 100).toFixed(2);
 
   document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === s.theme));
   document.querySelectorAll('[data-margin]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.margin) === s.maxWidth));
@@ -678,13 +724,15 @@ function applySettings() {
   }
 }
 
+// ── EPUB parser ──────────────────────────────────────────────────────────────
+
 async function parseEpub(arrayBuffer) {
   const zip = await JSZip.loadAsync(arrayBuffer);
 
   const containerXml = await zip.file('META-INF/container.xml').async('string');
   const containerDoc = new DOMParser().parseFromString(containerXml, 'application/xml');
   const opfPath = containerDoc.querySelector('rootfile').getAttribute('full-path');
-  const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
+  const opfDir  = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
 
   const opfXml = await zip.file(opfPath).async('string');
   const opfDoc = new DOMParser().parseFromString(opfXml, 'application/xml');
@@ -706,7 +754,7 @@ async function parseEpub(arrayBuffer) {
   const spineItems = [];
   opfDoc.querySelectorAll('spine itemref').forEach(ref => {
     const id = ref.getAttribute('idref');
-    if (manifest[id]) spineItems.push({id, ...manifest[id]});
+    if (manifest[id]) spineItems.push({ id, ...manifest[id] });
   });
 
   const chapterContents = await Promise.all(spineItems.map(async item => {
@@ -714,9 +762,9 @@ async function parseEpub(arrayBuffer) {
     const file = zip.file(fullPath) || zip.file(item.href);
     if (!file) return { id: item.id, href: item.href, html: '<p>(Chapter not found)</p>', title: '' };
     const raw = await file.async('string');
-
     const doc = new DOMParser().parseFromString(raw, 'text/html');
 
+    // Resolve embedded images to base64
     const imgEls = doc.querySelectorAll('img, image');
     await Promise.all(Array.from(imgEls).map(async img => {
       const src = img.getAttribute('src') || img.getAttribute('xlink:href') || '';
@@ -726,9 +774,9 @@ async function parseEpub(arrayBuffer) {
         if (imgFile) {
           try {
             const b64 = await imgFile.async('base64');
-            const ext = imgPath.split('.').pop().toLowerCase();
-            const mimeMap = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',svg:'image/svg+xml'};
-            img.setAttribute('src', `data:${mimeMap[ext]||'image/jpeg'};base64,${b64}`);
+            const ext  = imgPath.split('.').pop().toLowerCase();
+            const mimeMap = { jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', gif:'image/gif', webp:'image/webp', svg:'image/svg+xml' };
+            img.setAttribute('src', `data:${mimeMap[ext] || 'image/jpeg'};base64,${b64}`);
           } catch(e) {}
         }
       }
@@ -736,16 +784,16 @@ async function parseEpub(arrayBuffer) {
 
     const title = doc.querySelector('title')?.textContent || doc.querySelector('h1,h2,h3')?.textContent || item.href;
     let body = doc.querySelector('body')?.innerHTML || doc.documentElement?.innerHTML || raw;
-
     body = body.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
 
     return { id: item.id, href: item.href, html: body, title: title.trim() };
   }));
 
+  // Parse TOC — prefer EPUB3 nav, fall back to NCX
   const tocItems = [];
-  const ncxId = opfDoc.querySelector('spine')?.getAttribute('toc');
-  const navItem = Object.values(manifest).find(m => m.type === 'application/xhtml+xml' && m.href.includes('nav'));
-  const ncxItem = ncxId && manifest[ncxId];
+  const ncxId    = opfDoc.querySelector('spine')?.getAttribute('toc');
+  const navItem  = Object.values(manifest).find(m => m.type === 'application/xhtml+xml' && m.href.includes('nav'));
+  const ncxItem  = ncxId && manifest[ncxId];
 
   if (navItem) {
     const navPath = opfDir + navItem.href;
@@ -753,7 +801,7 @@ async function parseEpub(arrayBuffer) {
     if (navFile) {
       const navXml = await navFile.async('string');
       const navDoc = new DOMParser().parseFromString(navXml, 'text/html');
-      const navEl = navDoc.querySelector('nav[epub\\:type="toc"], nav');
+      const navEl  = navDoc.querySelector('nav[epub\\:type="toc"], nav');
       if (navEl) {
         navEl.querySelectorAll('a').forEach(a => {
           const depth = getListDepth(a);
@@ -769,7 +817,7 @@ async function parseEpub(arrayBuffer) {
       const ncxDoc = new DOMParser().parseFromString(ncxXml, 'application/xml');
       ncxDoc.querySelectorAll('navPoint').forEach(np => {
         const label = np.querySelector('navLabel text')?.textContent?.trim() || '';
-        const src = np.querySelector('content')?.getAttribute('src') || '';
+        const src   = np.querySelector('content')?.getAttribute('src') || '';
         const depth = getNavDepth(np);
         tocItems.push({ label, href: src, depth });
       });
@@ -778,29 +826,31 @@ async function parseEpub(arrayBuffer) {
 
   if (!tocItems.length) {
     chapterContents.forEach((c, i) => {
-      tocItems.push({ label: c.title || `Chapter ${i+1}`, href: c.href, depth: 0 });
+      tocItems.push({ label: c.title || `Chapter ${i + 1}`, href: c.href, depth: 0 });
     });
   }
 
+  // Extract cover image
   let coverBlob = null;
-  const coverId = opfDoc.querySelector('meta[name="cover"]')?.getAttribute('content');
-  const coverItem = (coverId && manifest[coverId]) || Object.values(manifest).find(m => m.type?.startsWith('image/') && /cover/i.test(m.href));
+  const coverId   = opfDoc.querySelector('meta[name="cover"]')?.getAttribute('content');
+  const coverItem = (coverId && manifest[coverId]) ||
+    Object.values(manifest).find(m => m.type?.startsWith('image/') && /cover/i.test(m.href));
   if (coverItem) {
     try {
       const coverPath = opfDir + coverItem.href;
       const coverFile = zip.file(coverPath) || zip.file(coverItem.href);
       if (coverFile) {
-        const b64 = await coverFile.async('base64');
-        const ext = coverItem.href.split('.').pop().toLowerCase();
+        const b64  = await coverFile.async('base64');
+        const ext  = coverItem.href.split('.').pop().toLowerCase();
         const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : 'image/jpeg';
-        coverBlob = `data:${mime};base64,${b64}`;
+        coverBlob  = `data:${mime};base64,${b64}`;
       }
     } catch(e) {}
   }
 
   return {
-    title: meta['title'] || 'Untitled',
-    author: meta['creator'] || '',
+    title:    meta['title']   || 'Untitled',
+    author:   meta['creator'] || '',
     chapters: chapterContents,
     tocItems,
     coverBlob,
@@ -810,7 +860,7 @@ async function parseEpub(arrayBuffer) {
 function getListDepth(el) {
   let d = 0, p = el.parentElement;
   while (p) { if (p.tagName === 'LI' || p.tagName === 'OL' || p.tagName === 'UL') d++; p = p.parentElement; }
-  return Math.max(0, Math.floor(d/2) - 1);
+  return Math.max(0, Math.floor(d / 2) - 1);
 }
 
 function getNavDepth(el) {
@@ -830,37 +880,42 @@ function resolvePath(base, relative) {
   return parts.join('/');
 }
 
+// ── IndexedDB ────────────────────────────────────────────────────────────────
+
 let db;
 function openDB() {
   return new Promise((res, rej) => {
     const req = indexedDB.open('leaf_books', 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore('books', {keyPath: 'id'});
+    req.onupgradeneeded = e => e.target.result.createObjectStore('books', { keyPath: 'id' });
     req.onsuccess = e => { db = e.target.result; res(db); };
-    req.onerror = () => rej(req.error);
+    req.onerror   = () => rej(req.error);
   });
 }
 function saveBook(id, buffer) {
   return new Promise((res, rej) => {
     const tx = db.transaction('books', 'readwrite');
-    tx.objectStore('books').put({id, buffer});
-    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    tx.objectStore('books').put({ id, buffer });
+    tx.oncomplete = res;
+    tx.onerror    = () => rej(tx.error);
   });
 }
 function getBook(id) {
   return new Promise((res, rej) => {
-    const tx = db.transaction('books', 'readonly');
+    const tx  = db.transaction('books', 'readonly');
     const req = tx.objectStore('books').get(id);
     req.onsuccess = () => res(req.result?.buffer || null);
-    req.onerror = () => rej(req.error);
+    req.onerror   = () => rej(req.error);
   });
 }
 function deleteBook(id) {
-  return new Promise((res) => {
+  return new Promise(res => {
     const tx = db.transaction('books', 'readwrite');
     tx.objectStore('books').delete(id);
     tx.oncomplete = res;
   });
 }
+
+// ── Library rendering ────────────────────────────────────────────────────────
 
 function renderLibrary() {
   if (!state.books.length) {
@@ -871,20 +926,28 @@ function renderLibrary() {
   librarySection.style.display = '';
   emptyLib.style.display = 'none';
   libraryList.innerHTML = '';
-  
+
   let filtered = [...state.books];
   const query = $('lib-search').value.trim().toLowerCase();
   if (query) {
-    filtered = filtered.filter(b => b.title.toLowerCase().includes(query) || (b.author && b.author.toLowerCase().includes(query)));
+    filtered = filtered.filter(b =>
+      b.title.toLowerCase().includes(query) ||
+      (b.author && b.author.toLowerCase().includes(query))
+    );
   }
 
   const sortBy = $('lib-sort').value;
   if (sortBy === 'recent') {
-    filtered.sort((a,b) => b.addedAt - a.addedAt);
+    filtered.sort((a, b) => b.addedAt - a.addedAt);
   } else if (sortBy === 'title') {
-    filtered.sort((a,b) => a.title.localeCompare(b.title));
+    filtered.sort((a, b) => a.title.localeCompare(b.title));
   } else if (sortBy === 'progress') {
-    filtered.sort((a,b) => (b.progress || 0) - (a.progress || 0));
+    filtered.sort((a, b) => (b.progress || 0) - (a.progress || 0));
+  }
+
+  if (!filtered.length) {
+    libraryList.appendChild(el('div', '', 'No books match your search.'));
+    return;
   }
 
   filtered.forEach(book => {
@@ -903,23 +966,23 @@ function renderLibrary() {
       thumb.textContent = '📖';
     }
 
-    const info = el('div', 'book-info');
-    const title = el('div', 'book-title', book.title);
+    const info   = el('div', 'book-info');
+    const title  = el('div', 'book-title', book.title);
     const author = el('div', 'book-author', book.author || 'Unknown author');
-    const prog = el('div', 'book-prog');
-    const fill = el('div', 'book-prog-fill');
+    const prog   = el('div', 'book-prog');
+    const fill   = el('div', 'book-prog-fill');
     fill.style.width = (book.progress || 0) + '%';
     prog.appendChild(fill);
     info.appendChild(title); info.appendChild(author); info.appendChild(prog);
 
-    const del = el('button', 'book-delete');
-    del.textContent = '✕';
+    const del = el('button', 'book-delete', '✕');
     del.setAttribute('aria-label', 'Remove book');
     del.addEventListener('click', async e => {
       e.stopPropagation();
       if (!confirm(`Remove "${book.title}" from library?`)) return;
-      state.books = state.books.filter(b => b.id !== book.id);
+      // FIX: await delete before saving state to avoid race condition
       await deleteBook(book.id);
+      state.books = state.books.filter(b => b.id !== book.id);
       saveState();
       renderLibrary();
       toast('Book removed');
@@ -927,10 +990,12 @@ function renderLibrary() {
 
     card.appendChild(thumb); card.appendChild(info); card.appendChild(del);
     card.addEventListener('click', () => openBook(book.id));
-    card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') openBook(book.id); });
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openBook(book.id); });
     libraryList.appendChild(card);
   });
 }
+
+// ── Open / show ──────────────────────────────────────────────────────────────
 
 async function openBook(id) {
   const meta = state.books.find(b => b.id === id);
@@ -943,7 +1008,7 @@ async function openBook(id) {
       const buffer = await getBook(id);
       if (!buffer) { toast('Book file not found — please re-import'); return; }
       parsed = await parseEpub(buffer);
-      meta._parsed = parsed;
+      meta._parsed  = parsed;
       meta.chapters = parsed.chapters;
       meta.tocItems = parsed.tocItems;
       if (!meta.coverBlob && parsed.coverBlob) {
@@ -952,7 +1017,7 @@ async function openBook(id) {
       }
     }
 
-    state.current = meta;
+    state.current   = meta;
     state.chapterIdx = meta.chapterIdx || 0;
 
     showReader();
@@ -968,26 +1033,27 @@ async function openBook(id) {
 }
 
 function calculateScrollPctFromProgress(progPct) {
-  if (!state.current || !state.current.chapters) return 0;
+  if (!state.current?.chapters) return 0;
   const exactChapter = (progPct / 100) * state.current.chapters.length;
   return exactChapter - Math.floor(exactChapter);
 }
 
 function showReader() {
-  homeEl.style.display = 'none';
+  homeEl.classList.add('reader-active');
   readerEl.classList.add('active');
-  bottombar.style.display = '';
-  $('btn-toc').style.display = '';
-  $('btn-home').style.display = '';
-  $('btn-settings').style.display = '';
+  // FIX: use class instead of inline display to avoid fighting CSS
+  bottombar.classList.remove('reader-hidden');
+  $('btn-toc').style.display         = '';
+  $('btn-home').style.display        = '';
+  $('btn-settings').style.display    = '';
   $('btn-search-toggle').style.display = '';
-  
+
   state.barsVisible = true;
   topbar.classList.remove('hidden');
   bottombar.classList.remove('hidden');
-  
+
   $('topbar-title').textContent = state.current.title;
-  readerEl.scrollTop = 0;
+  readerEl.scrollTop  = 0;
   readerEl.scrollLeft = 0;
 }
 
@@ -995,113 +1061,131 @@ function showHome() {
   if (state.current) saveState();
   state.current = null;
   readerEl.classList.remove('active');
-  bottombar.style.display = 'none';
-  homeEl.style.display = '';
-  $('btn-toc').style.display = 'none';
-  $('btn-home').style.display = 'none';
-  $('btn-settings').style.display = 'none';
+  bottombar.classList.add('reader-hidden');
+  homeEl.classList.remove('reader-active');
+  $('btn-toc').style.display         = 'none';
+  $('btn-home').style.display        = 'none';
+  $('btn-settings').style.display    = 'none';
   $('btn-search-toggle').style.display = 'none';
   $('topbar-title').textContent = 'Leaf';
   closeTOC(); closeSettings(); closeSearch();
   renderLibrary();
 }
 
+// ── Chapter rendering ────────────────────────────────────────────────────────
+
 function renderChapter(idx, scrollPct = 0) {
   const book = state.current;
   if (!book || !book.chapters) return;
   idx = Math.max(0, Math.min(idx, book.chapters.length - 1));
   state.chapterIdx = idx;
-  book.chapterIdx = idx;
+  book.chapterIdx  = idx;
 
   const chapter = book.chapters[idx];
   readerContent.innerHTML = chapter.html;
 
-  readerContent.querySelectorAll('[style]').forEach(el => {
-    const keep = [];
-    const style = el.getAttribute('style');
+  // Strip inline styles except italic / bold
+  readerContent.querySelectorAll('[style]').forEach(node => {
+    const style = node.getAttribute('style');
+    const keep  = [];
     if (/font-style:\s*italic/i.test(style)) keep.push('font-style:italic');
-    if (/font-weight:\s*bold/i.test(style)) keep.push('font-weight:bold');
-    if (keep.length) el.setAttribute('style', keep.join(';'));
-    else el.removeAttribute('style');
+    if (/font-weight:\s*(bold|[6-9]\d{2})/i.test(style)) keep.push('font-weight:bold');
+    if (keep.length) node.setAttribute('style', keep.join(';'));
+    else node.removeAttribute('style');
   });
 
   if (state.settings.layout === 'paginate') {
     readerContent.style.columnWidth = (window.innerWidth - 48) + 'px';
   }
 
+  // FIX: use requestAnimationFrame after a short delay so layout is fully computed
   setTimeout(() => {
     const isPag = state.settings.layout === 'paginate';
     if (scrollPct > 0) {
       if (isPag) {
-        const sw = readerEl.scrollWidth;
-        const cw = readerEl.clientWidth;
-        readerEl.scrollLeft = scrollPct * (sw - cw);
+        readerEl.scrollLeft = scrollPct * (readerEl.scrollWidth - readerEl.clientWidth);
       } else {
-        const sh = readerEl.scrollHeight;
-        const ch = readerEl.clientHeight;
-        readerEl.scrollTop = scrollPct * (sh - ch);
+        readerEl.scrollTop = scrollPct * (readerEl.scrollHeight - readerEl.clientHeight);
       }
     } else {
-      readerEl.scrollTop = 0;
+      readerEl.scrollTop  = 0;
       readerEl.scrollLeft = 0;
     }
     updateProgress();
-  }, 30);
+  }, 50);
 
   $('btn-prev').disabled = idx === 0;
   $('btn-next').disabled = idx === book.chapters.length - 1;
 
-  const tocMatch = book.tocItems?.find(t => t.href && chapter.href && chapter.href.includes(t.href.split('#')[0]));
-  const chapTitle = tocMatch?.label || chapter.title || `Chapter ${idx+1}`;
+  const tocMatch = book.tocItems?.find(t =>
+    t.href && chapter.href &&
+    chapter.href.includes(t.href.split('#')[0])
+  );
+  const chapTitle = tocMatch?.label || chapter.title || `Chapter ${idx + 1}`;
   chapterName.textContent = chapTitle;
-  $('topbar-title').textContent = chapTitle.length > 30 ? chapTitle.slice(0,28)+'…' : chapTitle;
+  $('topbar-title').textContent = chapTitle.length > 30 ? chapTitle.slice(0, 28) + '…' : chapTitle;
 
   updateTOCActive(idx);
 }
 
+// ── Progress ─────────────────────────────────────────────────────────────────
+
 function updateProgress() {
   const book = state.current;
-  if (!book || !book.chapters) return;
+  if (!book?.chapters) return;
   const totalChaps = book.chapters.length;
-  if (totalChaps === 0) return;
+  if (!totalChaps) return;
 
   const isPag = state.settings.layout === 'paginate';
-  const st = isPag ? readerEl.scrollLeft : readerEl.scrollTop;
-  const sh = isPag ? readerEl.scrollWidth : readerEl.scrollHeight;
-  const ch = isPag ? readerEl.clientWidth : readerEl.clientHeight;
+  const st  = isPag ? readerEl.scrollLeft  : readerEl.scrollTop;
+  const sh  = isPag ? readerEl.scrollWidth : readerEl.scrollHeight;
+  const ch  = isPag ? readerEl.clientWidth : readerEl.clientHeight;
   const scrollable = sh - ch;
-  
-  const chapterScrollPct = scrollable > 0 ? (st / scrollable) : 0;
-  const overallPct = Math.max(0, Math.min(100, ((state.chapterIdx + chapterScrollPct) / totalChaps) * 100));
 
-  progressFill.style.width = overallPct + '%';
-  progressThumb.style.left = overallPct + '%';
-  pctLabel.textContent = Math.round(overallPct) + '%';
-  locLabel.textContent = `${state.chapterIdx+1}/${totalChaps}`;
+  const chapterScrollPct = scrollable > 0 ? st / scrollable : 0;
+  const overallPct = Math.max(0, Math.min(100,
+    ((state.chapterIdx + chapterScrollPct) / totalChaps) * 100
+  ));
+
+  // FIX: clamp thumb position so it stays within track (account for 7px half-width)
+  const thumbPct = Math.max(0, Math.min(100, overallPct));
+  progressFill.style.width  = overallPct + '%';
+  progressThumb.style.left  = thumbPct + '%';
+  pctLabel.textContent      = Math.round(overallPct) + '%';
+  locLabel.textContent      = `${state.chapterIdx + 1}/${totalChaps}`;
+
+  // FIX: update aria-valuenow for accessibility
+  $('progress-track').setAttribute('aria-valuenow', Math.round(overallPct));
 
   book.progress = Math.round(overallPct);
 
+  // Estimate remaining reading time
   let remainingWords = 0;
   for (let i = state.chapterIdx; i < book.chapters.length; i++) {
     const chap = book.chapters[i];
     if (chap.wordCount === undefined) {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = chap.html;
-      const text = tempDiv.textContent || '';
-      chap.wordCount = text.split(/\s+/).filter(Boolean).length;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = chap.html;
+      chap.wordCount = (tmp.textContent || '').split(/\s+/).filter(Boolean).length;
     }
-    if (i === state.chapterIdx) {
-      remainingWords += Math.round(chap.wordCount * (1 - chapterScrollPct));
-    } else {
-      remainingWords += chap.wordCount;
-    }
+    remainingWords += i === state.chapterIdx
+      ? Math.round(chap.wordCount * (1 - chapterScrollPct))
+      : chap.wordCount;
   }
 
-  const readingWPM = 200;
+  const readingWPM   = 200;
   const minsRemaining = Math.ceil(remainingWords / readingWPM);
-  $('stat-time-remaining').textContent = minsRemaining > 0 ? `${minsRemaining} min${minsRemaining > 1 ? 's' : ''} remaining` : 'Finished';
+  $('stat-time-remaining').textContent = minsRemaining > 0
+    ? `${minsRemaining} min${minsRemaining > 1 ? 's' : ''} remaining`
+    : 'Finished';
   $('stat-reading-speed').textContent = `${remainingWords.toLocaleString()} words left`;
+
+  // Debounced save
+  clearTimeout(updateProgress._saveTimer);
+  updateProgress._saveTimer = setTimeout(saveState, 1500);
 }
+
+// ── TOC ──────────────────────────────────────────────────────────────────────
 
 function renderTOC() {
   const book = state.current;
@@ -1115,9 +1199,10 @@ function renderTOC() {
     btn.dataset.depth = Math.min(item.depth, 2);
     btn.addEventListener('click', () => {
       const hrefBase = item.href.split('#')[0];
-      const idx = book.chapters.findIndex(c => c.href === hrefBase || c.href.endsWith('/' + hrefBase) || hrefBase.endsWith(c.href));
-      if (idx >= 0) renderChapter(idx);
-      else renderChapter(Math.min(i, book.chapters.length - 1));
+      const idx = book.chapters.findIndex(c =>
+        c.href === hrefBase || c.href.endsWith('/' + hrefBase) || hrefBase.endsWith(c.href)
+      );
+      renderChapter(idx >= 0 ? idx : Math.min(i, book.chapters.length - 1));
       closeTOC();
     });
     tocList.appendChild(btn);
@@ -1125,83 +1210,138 @@ function renderTOC() {
 }
 
 function updateTOCActive(chapterIdx) {
-  const book = state.current;
+  const book    = state.current;
   const chapter = book?.chapters?.[chapterIdx];
   if (!chapter) return;
   tocList.querySelectorAll('.toc-item').forEach((btn, i) => {
     const item = book.tocItems?.[i];
     if (!item) return;
     const hrefBase = item.href.split('#')[0];
-    const match = chapter.href === hrefBase || chapter.href.endsWith('/'+hrefBase) || hrefBase.endsWith(chapter.href);
+    const match = chapter.href === hrefBase ||
+      chapter.href.endsWith('/' + hrefBase) ||
+      hrefBase.endsWith(chapter.href);
     btn.classList.toggle('active', match);
+    if (match) btn.scrollIntoView({ block: 'nearest' });
   });
 }
 
-function openTOC() { tocPanel.classList.add('open'); tocOverlay.classList.add('visible'); state.tocOpen = true; }
-function closeTOC() { tocPanel.classList.remove('open'); if(!state.searchOpen) tocOverlay.classList.remove('visible'); state.tocOpen = false; }
+// ── Panel open/close — FIX: shared overlay ref-counted properly ───────────────
+
+function updateOverlay() {
+  const open = state.tocOpen || state.searchOpen;
+  panelOverlay.classList.toggle('visible', open);
+}
+
+function openTOC()  { tocPanel.classList.add('open'); state.tocOpen = true; updateOverlay(); }
+function closeTOC() { tocPanel.classList.remove('open'); state.tocOpen = false; updateOverlay(); }
 function toggleTOC() { state.tocOpen ? closeTOC() : openTOC(); }
 
-function openSettings() { settingsPanel.classList.add('open'); state.settingsOpen = true; }
+function openSettings()  { settingsPanel.classList.add('open'); state.settingsOpen = true; }
 function closeSettings() { settingsPanel.classList.remove('open'); state.settingsOpen = false; }
 function toggleSettings() { state.settingsOpen ? closeSettings() : openSettings(); }
 
-function openSearch() { $('search-panel').classList.add('open'); tocOverlay.classList.add('visible'); state.searchOpen = true; $('search-input').focus(); }
-function closeSearch() { $('search-panel').classList.remove('open'); if(!state.tocOpen) tocOverlay.classList.remove('visible'); state.searchOpen = false; }
+function openSearch() {
+  $('search-panel').classList.add('open');
+  state.searchOpen = true;
+  updateOverlay();
+  $('search-input').focus();
+}
+function closeSearch() {
+  $('search-panel').classList.remove('open');
+  state.searchOpen = false;
+  updateOverlay();
+}
 function toggleSearch() { state.searchOpen ? closeSearch() : openSearch(); }
+
+// ── Search ───────────────────────────────────────────────────────────────────
+
+// FIX: limit search results to prevent freezing on large books
+const MAX_SEARCH_RESULTS = 100;
 
 function performSearch() {
   const query = $('search-input').value.trim().toLowerCase();
   const resultsContainer = $('search-results');
+  const countEl = $('search-count');
   resultsContainer.innerHTML = '';
-  if (!query || !state.current || !state.current.chapters) return;
+  countEl.textContent = '';
+  if (!query || !state.current?.chapters) return;
 
-  state.current.chapters.forEach((chap, cIdx) => {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = chap.html;
-    const text = tempDiv.textContent || '';
-    
-    let index = text.toLowerCase().indexOf(query);
+  // Escape regex special chars for safe use in RegExp
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const highlightRe  = new RegExp(escapedQuery, 'gi');
+
+  let total = 0;
+  let shown = 0;
+  const frag = document.createDocumentFragment();
+
+  outer:
+  for (let cIdx = 0; cIdx < state.current.chapters.length; cIdx++) {
+    const chap = state.current.chapters[cIdx];
+    const tmp  = document.createElement('div');
+    tmp.innerHTML = chap.html;
+    const text = tmp.textContent || '';
+    const lower = text.toLowerCase();
+
+    let index = lower.indexOf(query);
     while (index !== -1) {
-      const start = Math.max(0, index - 40);
-      const end = Math.min(text.length, index + query.length + 40);
-      const snippet = text.substring(start, end).replace(/\s+/g, ' ');
+      total++;
+      if (shown < MAX_SEARCH_RESULTS) {
+        shown++;
+        const start   = Math.max(0, index - 50);
+        const end     = Math.min(text.length, index + query.length + 50);
+        const snippet = text.substring(start, end).replace(/\s+/g, ' ').trim();
 
-      const item = el('button', 'search-item');
-      const tocMatch = state.current.tocItems?.find(t => t.href && chap.href && chap.href.includes(t.href.split('#')[0]));
-      const chapTitle = tocMatch?.label || chap.title || `Chapter ${cIdx + 1}`;
+        const tocMatch  = state.current.tocItems?.find(t => t.href && chap.href && chap.href.includes(t.href.split('#')[0]));
+        const chapTitle = tocMatch?.label || chap.title || `Chapter ${cIdx + 1}`;
 
-      const itemChap = el('div', 'search-item-chap', chapTitle);
-      const itemText = el('div', 'search-item-text');
-      itemText.innerHTML = '...' + snippet.replace(new RegExp(query, 'gi'), match => `<strong>${match}</strong>`) + '...';
-      
-      item.appendChild(itemChap);
-      item.appendChild(itemText);
+        const item      = el('button', 'search-item');
+        const itemChap  = el('div', 'search-item-chap', chapTitle);
+        const itemText  = el('div', 'search-item-text');
+        // FIX: use textContent for snippet then add HTML for highlight — safer than raw innerHTML
+        const highlighted = ('…' + snippet + '…').replace(highlightRe, m => `<mark style="background:var(--accent-light);color:var(--accent);border-radius:2px;">${m}</mark>`);
+        itemText.innerHTML = highlighted;
 
-      const targetPct = index / text.length;
-      item.addEventListener('click', () => {
-        renderChapter(cIdx, targetPct);
-        closeSearch();
-      });
+        item.appendChild(itemChap);
+        item.appendChild(itemText);
 
-      resultsContainer.appendChild(item);
-      index = text.toLowerCase().indexOf(query, index + 1);
+        const targetPct = index / text.length;
+        item.addEventListener('click', () => { renderChapter(cIdx, targetPct); closeSearch(); });
+        frag.appendChild(item);
+      }
+      index = lower.indexOf(query, index + 1);
+      if (total > MAX_SEARCH_RESULTS * 5) break outer; // safety bail on huge books
     }
-  });
+  }
 
-  if (!resultsContainer.children.length) {
+  resultsContainer.appendChild(frag);
+
+  if (total === 0) {
     resultsContainer.appendChild(el('div', 'toc-item', 'No matches found'));
+    countEl.textContent = '';
+  } else {
+    countEl.textContent = shown < total
+      ? `Showing ${shown} of ${total} results`
+      : `${total} result${total !== 1 ? 's' : ''}`;
   }
 }
 
+// ── Import ───────────────────────────────────────────────────────────────────
+
 async function importFile(file) {
-  if (!file || !file.name.endsWith('.epub')) { toast('Please open an .epub file'); return; }
-  if (file.size > 80 * 1024 * 1024) { toast('File is too large (max 80 MB)'); return; }
-  
+  if (!file || !file.name.toLowerCase().endsWith('.epub')) {
+    toast('Please open an .epub file');
+    return;
+  }
+  if (file.size > 80 * 1024 * 1024) {
+    toast('File is too large (max 80 MB)');
+    return;
+  }
+
   loadingEl.classList.add('visible');
   try {
     const buffer = await file.arrayBuffer();
     const parsed = await parseEpub(buffer);
-    const id = 'book_' + Date.now();
+    const id     = 'book_' + Date.now();
 
     const book = {
       id, title: parsed.title, author: parsed.author,
@@ -1227,40 +1367,52 @@ async function importFile(file) {
   }
 }
 
+// ── Event listeners ───────────────────────────────────────────────────────────
+
 const fileInput = $('file-input');
 const dropZone  = $('drop-zone');
 
 dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') fileInput.click(); });
-fileInput.addEventListener('change', e => { if(e.target.files[0]) importFile(e.target.files[0]); e.target.value=''; });
+dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) importFile(e.target.files[0]); e.target.value = ''; });
 
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if (f) importFile(f); });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) importFile(f);
+});
 
-$('btn-prev').addEventListener('click', () => { if(state.chapterIdx > 0) renderChapter(state.chapterIdx - 1); });
-$('btn-next').addEventListener('click', () => { if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1); });
+$('btn-prev').addEventListener('click', () => { if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1); });
+$('btn-next').addEventListener('click', () => {
+  if (state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
+});
 $('btn-toc').addEventListener('click', () => { closeSettings(); closeSearch(); toggleTOC(); });
 $('btn-toc-close').addEventListener('click', closeTOC);
 $('btn-home').addEventListener('click', showHome);
-$('btn-settings').addEventListener('click', (e) => { e.stopPropagation(); closeTOC(); closeSearch(); toggleSettings(); });
-$('btn-search-toggle').addEventListener('click', (e) => { e.stopPropagation(); closeTOC(); closeSettings(); toggleSearch(); });
+$('btn-settings').addEventListener('click', e => { e.stopPropagation(); closeTOC(); closeSearch(); toggleSettings(); });
+$('btn-search-toggle').addEventListener('click', e => { e.stopPropagation(); closeTOC(); closeSettings(); toggleSearch(); });
 $('btn-search-close').addEventListener('click', closeSearch);
 $('search-input').addEventListener('input', performSearch);
-tocOverlay.addEventListener('click', () => { closeTOC(); closeSearch(); });
+// FIX: panelOverlay closes both panels
+panelOverlay.addEventListener('click', () => { closeTOC(); closeSearch(); });
 
 $('lib-search').addEventListener('input', renderLibrary);
 $('lib-sort').addEventListener('change', renderLibrary);
 
+// Reader tap zones for navigation / bar toggle
 readerEl.addEventListener('click', e => {
   if (e.target.closest('button, a, input, [role="slider"], #settings-panel, #toc-panel, #search-panel')) return;
   if (window.getSelection().toString().trim() !== '') return;
-  
-  const x = e.clientX;
-  const w = window.innerWidth;
+
+  const x   = e.clientX;
+  const w   = window.innerWidth;
   const isPag = state.settings.layout === 'paginate';
-  
+
   if (x < w * 0.15) {
+    // Left zone — go back
     if (isPag) {
       if (readerEl.scrollLeft <= 10) {
         if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1);
@@ -1275,6 +1427,7 @@ readerEl.addEventListener('click', e => {
       }
     }
   } else if (x > w * 0.85) {
+    // Right zone — go forward
     if (isPag) {
       const sw = readerEl.scrollWidth, sl = readerEl.scrollLeft, cw = readerEl.clientWidth;
       if (sl + cw >= sw - 10) {
@@ -1291,27 +1444,31 @@ readerEl.addEventListener('click', e => {
       }
     }
   } else {
+    // Centre — toggle bars / close panels
     if (state.settingsOpen) { closeSettings(); return; }
-    if (state.tocOpen) { closeTOC(); return; }
-    if (state.searchOpen) { closeSearch(); return; }
-    
+    if (state.tocOpen)      { closeTOC();      return; }
+    if (state.searchOpen)   { closeSearch();   return; }
     state.barsVisible = !state.barsVisible;
     topbar.classList.toggle('hidden', !state.barsVisible);
     bottombar.classList.toggle('hidden', !state.barsVisible);
   }
 });
 
+// Progress drag — FIX: add/remove dragging class to disable transition during drag
 let isDraggingProgress = false;
+let dragPct = 0;
+
 readerEl.addEventListener('scroll', () => {
   if (!isDraggingProgress) updateProgress();
-}, {passive: true});
+}, { passive: true });
 
 const track = $('progress-track');
-let dragPct = 0;
 
 track.addEventListener('pointerdown', e => {
   isDraggingProgress = true;
   e.target.setPointerCapture(e.pointerId);
+  progressFill.classList.add('dragging');
+  progressThumb.classList.add('dragging');
   updateDragVisuals(e);
 });
 
@@ -1322,25 +1479,34 @@ track.addEventListener('pointermove', e => {
 track.addEventListener('pointerup', e => {
   if (isDraggingProgress) {
     isDraggingProgress = false;
+    progressFill.classList.remove('dragging');
+    progressThumb.classList.remove('dragging');
     updateDragVisuals(e);
     executeSeek(dragPct);
   }
 });
 
+// FIX: also handle pointercancel to clean up
+track.addEventListener('pointercancel', () => {
+  isDraggingProgress = false;
+  progressFill.classList.remove('dragging');
+  progressThumb.classList.remove('dragging');
+});
+
 function updateDragVisuals(e) {
-  const rect = track.getBoundingClientRect();
-  dragPct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  progressFill.style.width = (dragPct * 100) + '%';
-  progressThumb.style.left = (dragPct * 100) + '%';
-  pctLabel.textContent = Math.round(dragPct * 100) + '%';
+  const rect  = track.getBoundingClientRect();
+  dragPct     = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  progressFill.style.width  = (dragPct * 100) + '%';
+  progressThumb.style.left  = (dragPct * 100) + '%';
+  pctLabel.textContent      = Math.round(dragPct * 100) + '%';
 }
 
 function executeSeek(pct) {
   const book = state.current;
   if (!book?.chapters) return;
-  
-  const exactChapter = pct * book.chapters.length;
-  const targetIdx = Math.min(book.chapters.length - 1, Math.floor(exactChapter));
+
+  const exactChapter  = pct * book.chapters.length;
+  const targetIdx     = Math.min(book.chapters.length - 1, Math.floor(exactChapter));
   const chapterScrollPct = exactChapter - targetIdx;
 
   if (targetIdx !== state.chapterIdx) {
@@ -1348,20 +1514,23 @@ function executeSeek(pct) {
   } else {
     const isPag = state.settings.layout === 'paginate';
     if (isPag) {
-      const sw = readerEl.scrollWidth, cw = readerEl.clientWidth;
-      readerEl.scrollLeft = chapterScrollPct * (sw - cw);
+      readerEl.scrollLeft = chapterScrollPct * (readerEl.scrollWidth - readerEl.clientWidth);
     } else {
-      const sh = readerEl.scrollHeight, ch = readerEl.clientHeight;
-      readerEl.scrollTop = chapterScrollPct * (sh - ch);
+      readerEl.scrollTop = chapterScrollPct * (readerEl.scrollHeight - readerEl.clientHeight);
     }
     updateProgress();
   }
 }
 
+// Keyboard navigation
 document.addEventListener('keydown', e => {
+  // Don't capture keys when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (!state.current) return;
+
   const isPag = state.settings.layout === 'paginate';
   if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+    e.preventDefault();
     if (isPag) {
       const sw = readerEl.scrollWidth, sl = readerEl.scrollLeft, cw = readerEl.clientWidth;
       if (sl + cw >= sw - 10) {
@@ -1373,6 +1542,7 @@ document.addEventListener('keydown', e => {
       readerEl.scrollBy({ top: readerEl.clientHeight * 0.85, behavior: 'smooth' });
     }
   } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
     if (isPag) {
       if (readerEl.scrollLeft <= 10) {
         if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1);
@@ -1383,12 +1553,19 @@ document.addEventListener('keydown', e => {
       readerEl.scrollBy({ top: -(readerEl.clientHeight * 0.85), behavior: 'smooth' });
     }
   } else if (e.key === 'Escape') {
-    if (state.settingsOpen) closeSettings(); else if (state.tocOpen) closeTOC(); else if (state.searchOpen) closeSearch(); else showHome();
+    if (state.settingsOpen) closeSettings();
+    else if (state.tocOpen)  closeTOC();
+    else if (state.searchOpen) closeSearch();
+    else showHome();
   }
 });
 
+// Touch swipe to change chapter
 let touchStartX = 0, touchStartY = 0;
-readerEl.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, {passive: true});
+readerEl.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
 readerEl.addEventListener('touchend', e => {
   if (window.getSelection().toString().trim() !== '') return;
   const dx = e.changedTouches[0].clientX - touchStartX;
@@ -1397,8 +1574,9 @@ readerEl.addEventListener('touchend', e => {
     if (dx < 0 && state.current && state.chapterIdx < state.current.chapters.length - 1) renderChapter(state.chapterIdx + 1);
     if (dx > 0 && state.chapterIdx > 0) renderChapter(state.chapterIdx - 1);
   }
-}, {passive: true});
+}, { passive: true });
 
+// Settings sliders
 $('font-size-slider').addEventListener('input', e => { state.settings.fontSize = parseInt(e.target.value); applySettings(); saveState(); });
 $('line-height-slider').addEventListener('input', e => { state.settings.lineHeight = parseInt(e.target.value); applySettings(); saveState(); });
 $('brightness-slider').addEventListener('input', e => { state.settings.brightness = parseInt(e.target.value); applySettings(); saveState(); });
@@ -1411,30 +1589,26 @@ $('btn-fullscreen').addEventListener('click', () => {
   }
 });
 
+// FIX: on resize, re-render at the current chapter progress, not raw progress value
 window.addEventListener('resize', () => {
   if (state.current) {
     applySettings();
-    renderChapter(state.chapterIdx, calculateScrollPctFromProgress(state.current.progress || 0));
+    const scrollPct = calculateScrollPctFromProgress(state.current.progress || 0);
+    renderChapter(state.chapterIdx, scrollPct);
   }
 });
 
 document.querySelectorAll('.theme-dot').forEach(dot => {
   dot.addEventListener('click', () => { state.settings.theme = dot.dataset.t; applySettings(); saveState(); });
-  dot.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') dot.click(); });
+  dot.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') dot.click(); });
 });
 
 document.querySelectorAll('[data-margin]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.settings.maxWidth = parseInt(btn.dataset.margin);
-    applySettings(); saveState();
-  });
+  btn.addEventListener('click', () => { state.settings.maxWidth = parseInt(btn.dataset.margin); applySettings(); saveState(); });
 });
 
 document.querySelectorAll('[data-font]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    state.settings.fontFamily = btn.dataset.font;
-    applySettings(); saveState();
-  });
+  btn.addEventListener('click', () => { state.settings.fontFamily = btn.dataset.font; applySettings(); saveState(); });
 });
 
 document.querySelectorAll('[data-layout]').forEach(btn => {
@@ -1446,11 +1620,14 @@ document.querySelectorAll('[data-layout]').forEach(btn => {
   });
 });
 
-document.addEventListener('click', e => { 
+// Close settings when clicking outside
+document.addEventListener('click', e => {
   if (state.settingsOpen && !settingsPanel.contains(e.target) && !e.target.closest('#btn-settings')) {
-    closeSettings(); 
+    closeSettings();
   }
 });
+
+// ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
   await openDB();
