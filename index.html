@@ -6,53 +6,66 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Leaf — EPUB Reader</title>
+<meta name="theme-color" content="#FAFAFA" id="meta-theme-color">
+<title>SaOat — EPUB Reader</title>
+<link rel="manifest" id="pwa-manifest">
 <style>
   :root {
-    --bg: #F7F4EE;
-    --surface: #FFFFFF;
-    --text: #1C1917;
-    --text-muted: #78716C;
-    --text-hint: #A8A29E;
-    --accent: #2D6A4F;
-    --accent-light: #E8F5EF;
-    --border: rgba(28,25,23,0.10);
-    --border-strong: rgba(28,25,23,0.18);
-    --shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 6px rgba(0,0,0,0.04);
-    --radius: 14px;
+    --bg: #FAFAFA;
+    --surface: rgba(255, 255, 255, 0.85);
+    --surface-solid: #FFFFFF;
+    --text: #171717;
+    --text-muted: #525252;
+    --text-hint: #A3A3A3;
+    --accent: #0F766E;
+    --accent-light: #CCFBF1;
+    --border: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.15);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+    --shadow-lg: 0 16px 40px rgba(0,0,0,0.12);
+    --radius: 20px;
+    --radius-md: 12px;
     --radius-sm: 8px;
     --font-read: Georgia, 'Times New Roman', serif;
-    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     --read-size: 18px;
     --read-lh: 1.85;
     --read-width: 640px;
-    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    --spring: 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
   [data-theme="dark"] {
-    --bg: #121214;
-    --surface: #1E1E22;
-    --text: #E4E4E7;
-    --text-muted: #A1A1AA;
-    --text-hint: #52525B;
-    --accent: #4ADE80;
-    --accent-light: #14532D;
+    --bg: #0A0A0A;
+    --surface: rgba(23, 23, 23, 0.85);
+    --surface-solid: #171717;
+    --text: #F5F5F5;
+    --text-muted: #A3A3A3;
+    --text-hint: #525252;
+    --accent: #14B8A6;
+    --accent-light: #115E59;
     --border: rgba(255,255,255,0.08);
     --border-strong: rgba(255,255,255,0.15);
-    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+    --shadow-lg: 0 16px 40px rgba(0,0,0,0.5);
   }
 
   [data-theme="sepia"] {
-    --bg: #F4EAD4;
-    --surface: #FDF6E3;
+    --bg: #F4ECD8;
+    --surface: rgba(251, 247, 237, 0.85);
+    --surface-solid: #FBF7ED;
     --text: #433422;
     --text-muted: #7C6A52;
     --text-hint: #A39274;
-    --accent: #8B4513;
-    --accent-light: #EADCB9;
-    --border: rgba(67,52,34,0.10);
-    --border-strong: rgba(67,52,34,0.18);
-    --shadow: 0 4px 20px rgba(67,52,34,0.06);
+    --accent: #9A3412;
+    --accent-light: #FFEDD5;
+    --border: rgba(67,52,34,0.08);
+    --border-strong: rgba(67,52,34,0.15);
+    --shadow-sm: 0 2px 8px rgba(67,52,34,0.04);
+    --shadow-md: 0 8px 24px rgba(67,52,34,0.08);
+    --shadow-lg: 0 16px 40px rgba(67,52,34,0.12);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -66,415 +79,426 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  button { font-family: inherit; }
+  
   #app { height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+  .glass-panel {
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
 
   #topbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-    height: calc(56px + env(safe-area-inset-top));
+    height: calc(60px + env(safe-area-inset-top));
     padding-top: env(safe-area-inset-top);
-    background: var(--surface);
     border-bottom: 1px solid var(--border);
     display: flex; align-items: center;
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
-    gap: 12px;
-    box-shadow: var(--shadow);
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
     transition: transform var(--transition), opacity var(--transition);
   }
   #topbar.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
 
   .bar-title {
-    flex: 1; font-size: 15px; font-weight: 600; color: var(--text);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1; font-size: 14px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
+    letter-spacing: -0.01em;
   }
+  
   .bar-btn {
-    width: 38px; height: 38px; border: none; background: none; cursor: pointer;
+    width: 44px; height: 44px; border: none; background: transparent; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    border-radius: var(--radius-sm); color: var(--text);
-    font-size: 20px; transition: background var(--transition);
-    flex-shrink: 0;
+    border-radius: var(--radius-md); color: var(--text-muted);
+    transition: all 0.2s ease; flex-shrink: 0;
   }
-  .bar-btn:hover { background: var(--border); }
-  .bar-btn:active { background: var(--border-strong); transform: scale(0.94); }
+  .bar-btn:hover { background: var(--border); color: var(--text); }
+  .bar-btn:active { background: var(--border-strong); transform: scale(0.92); }
+  .bar-btn svg { width: 22px; height: 22px; }
 
   #bottombar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
     padding-bottom: env(safe-area-inset-bottom);
-    background: var(--surface);
     border-top: 1px solid var(--border);
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-    box-shadow: var(--shadow);
-    transition: transform var(--transition), opacity var(--transition);
-    /* FIX: use visibility+opacity instead of display:none to allow transitions */
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition), opacity var(--transition), visibility var(--transition);
   }
-  #bottombar.hidden { transform: translateY(100%); opacity: 0; pointer-events: none; }
-  /* FIX: separate reader-visible state from bar-visible state */
+  #bottombar.hidden { transform: translateY(100%); opacity: 0; visibility: hidden; pointer-events: none; }
   #bottombar.reader-hidden { display: none; }
 
-  .progress-row {
-    display: flex; align-items: center; gap: 10px; padding: 12px 0 4px;
-  }
-  .progress-label { font-size: 12px; color: var(--text-hint); min-width: 36px; user-select: none; }
+  .progress-row { display: flex; align-items: center; gap: 16px; padding: 16px 0 8px; }
+  .progress-label { font-size: 12px; font-weight: 500; color: var(--text-hint); min-width: 40px; user-select: none; font-variant-numeric: tabular-nums; }
   .progress-label.right { text-align: right; }
+  
   #progress-track {
-    flex: 1; height: 4px; background: var(--border-strong); border-radius: 99px; cursor: pointer;
-    position: relative; touch-action: none; padding: 10px 0; background-clip: content-box;
+    flex: 1; height: 32px; cursor: pointer;
+    position: relative; touch-action: none; display: flex; align-items: center;
   }
-  #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.1s ease; }
+  .progress-track-bg {
+    width: 100%; height: 6px; background: var(--border-strong); border-radius: 99px; position: absolute; overflow: hidden;
+  }
+  #progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.15s ease-out; }
   #progress-thumb {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--accent); border: 2px solid var(--surface);
-    box-shadow: 0 0 0 1px var(--accent);
-    cursor: grab; transition: left 0.1s ease;
-    /* FIX: clamp thumb so it can't overflow the track */
-    max-left: calc(100% - 7px);
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #FFF; border: 1px solid var(--border-strong);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    cursor: grab; transition: left 0.15s ease-out, transform 0.2s ease;
   }
-  /* FIX: remove transition during drag */
-  #progress-thumb.dragging,
-  #progress-fill.dragging { transition: none; }
-  #progress-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.2); }
+  #progress-thumb::after {
+    content: ''; position: absolute; inset: 5px; background: var(--accent); border-radius: 50%;
+  }
+  #progress-thumb.dragging, #progress-fill.dragging { transition: none; }
+  #progress-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
 
-  .chapter-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 0 12px; gap: 8px;
-  }
+  .chapter-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 16px; gap: 12px; }
+  
   .nav-btn {
-    padding: 6px 14px; border: 1px solid var(--border-strong);
-    border-radius: 99px; background: none; color: var(--text-muted);
-    font-size: 12px; font-family: var(--font-ui); cursor: pointer;
-    transition: all var(--transition); white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border: none;
+    border-radius: 99px; background: var(--border); color: var(--text);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s ease; white-space: nowrap;
   }
-  .nav-btn:hover { background: var(--border); color: var(--text); }
-  .nav-btn:disabled { opacity: 0.35; pointer-events: none; }
+  .nav-btn svg { width: 16px; height: 16px; }
+  .nav-btn:hover { background: var(--border-strong); }
+  .nav-btn:active { transform: scale(0.96); }
+  .nav-btn:disabled { opacity: 0.4; pointer-events: none; }
+  
   #chapter-name {
-    font-size: 12px; color: var(--text-hint); text-align: center;
+    font-size: 13px; font-weight: 500; color: var(--text-muted); text-align: center;
     flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: none;
   }
 
   #home {
     flex: 1; display: flex; flex-direction: column;
-    padding-top: calc(56px + env(safe-area-inset-top));
+    padding-top: calc(60px + env(safe-area-inset-top));
     overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
-  /* FIX: hide home cleanly */
   #home.reader-active { display: none; }
+  #home-inner { padding: 32px 24px; max-width: 540px; margin: 0 auto; width: 100%; }
 
-  #home-inner { padding: 24px 20px; max-width: 480px; margin: 0 auto; width: 100%; }
-
-  .home-hero { padding: 40px 0 32px; text-align: center; }
-  .leaf-icon {
-    width: 64px; height: 64px; background: var(--accent-light);
-    border-radius: 20px; display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 18px; font-size: 30px;
+  .home-hero { padding: 48px 0 40px; text-align: center; }
+  .saoat-icon {
+    width: 72px; height: 72px; background: var(--accent-light); color: var(--accent);
+    border-radius: 24px; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; box-shadow: var(--shadow-sm);
   }
-  .home-hero h1 {
-    font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -0.5px;
-  }
-  .home-hero p { font-size: 15px; color: var(--text-muted); margin-top: 6px; }
+  .saoat-icon svg { width: 40px; height: 40px; stroke-width: 1.5; }
+  .home-hero h1 { font-size: 32px; font-weight: 800; color: var(--text); letter-spacing: -0.03em; }
+  .home-hero p { font-size: 16px; color: var(--text-muted); margin-top: 8px; }
 
   #drop-zone {
     border: 2px dashed var(--border-strong); border-radius: var(--radius);
-    padding: 36px 24px; text-align: center; cursor: pointer;
-    transition: all var(--transition); background: none;
-    margin-bottom: 28px;
+    padding: 48px 32px; text-align: center; cursor: pointer;
+    transition: all var(--transition); background: var(--surface-solid);
+    margin-bottom: 40px;
   }
-  #drop-zone.drag-over {
-    border-color: var(--accent); background: var(--accent-light);
-  }
-  #drop-zone:hover { border-color: var(--text-hint); background: var(--border); }
-  .drop-icon { font-size: 36px; margin-bottom: 12px; }
-  .drop-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-  .drop-sub { font-size: 13px; color: var(--text-muted); }
+  #drop-zone.drag-over { border-color: var(--accent); background: var(--accent-light); transform: scale(1.02); }
+  #drop-zone:hover:not(.drag-over) { border-color: var(--text-hint); background: var(--bg); }
+  .drop-icon { color: var(--text-muted); margin-bottom: 16px; display: inline-flex; }
+  .drop-icon svg { width: 48px; height: 48px; stroke-width: 1.5; }
+  .drop-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .drop-sub { font-size: 14px; color: var(--text-hint); }
   #file-input { display: none; }
 
   .section-title {
-    font-size: 11px; font-weight: 700; color: var(--text-hint);
-    letter-spacing: 0.08em; text-transform: uppercase;
-    margin-bottom: 12px;
+    font-size: 12px; font-weight: 700; color: var(--text-hint);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 16px;
   }
-  #library-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+  #library-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 48px; }
+  
   .book-card {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 16px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    cursor: pointer; transition: all var(--transition);
-    position: relative;
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px; background: var(--surface-solid);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    cursor: pointer; transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
   }
-  .book-card:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .book-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-md); }
   .book-card:active { transform: scale(0.98); }
+  
   .book-thumb {
-    width: 42px; height: 58px; border-radius: 6px; flex-shrink: 0;
-    background: var(--accent-light); display: flex; align-items: center;
-    justify-content: center; font-size: 20px; overflow: hidden;
+    width: 48px; height: 68px; border-radius: 6px; flex-shrink: 0;
+    background: var(--bg); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; 
+    overflow: hidden; color: var(--text-hint);
   }
   .book-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .book-info { flex: 1; min-width: 0; }
-  .book-title { font-size: 14px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .book-author { font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .book-prog {
-    height: 3px; background: var(--border-strong); border-radius: 99px; margin-top: 8px;
-  }
-  .book-prog-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s ease; }
+  
+  .book-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .book-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .book-author { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  
+  .book-prog { height: 4px; background: var(--border); border-radius: 99px; margin-top: 12px; overflow: hidden; }
+  .book-prog-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.5s ease; }
+  
   .book-delete {
-    width: 28px; height: 28px; border: none; background: none; cursor: pointer;
-    border-radius: 50%; color: var(--text-hint); font-size: 16px;
+    width: 36px; height: 36px; border: none; background: transparent; cursor: pointer;
+    border-radius: 50%; color: var(--text-hint); 
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    transition: all var(--transition);
+    transition: all 0.2s ease;
   }
+  .book-delete svg { width: 18px; height: 18px; }
   .book-delete:hover { background: #FEE2E2; color: #DC2626; }
 
-  /* FIX: reader uses class toggling only, no inline display style fighting */
   #reader {
     display: none; flex: 1; flex-direction: column;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    width: 100%; height: 100%;
-    position: fixed; inset: 0;
+    overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+    width: 100%; height: 100%; position: fixed; inset: 0;
   }
   #reader.active { display: flex; }
   
   #reader-content {
-    flex: 1; max-width: var(--read-width); width: 100%;
-    margin: 0 auto; padding: calc(80px + env(safe-area-inset-top)) 24px calc(120px + env(safe-area-inset-bottom));
-    font-family: var(--font-read); font-size: var(--read-size);
-    line-height: var(--read-lh);
+    flex: 1; max-width: var(--read-width); width: 100%; margin: 0 auto;
+    padding: calc(80px + env(safe-area-inset-top)) 24px calc(140px + env(safe-area-inset-bottom));
+    font-family: var(--font-read); font-size: var(--read-size); line-height: var(--read-lh);
     color: var(--text);
   }
   
-  #reader-content p, 
-  #reader-content span, 
-  #reader-content li, 
-  #reader-content blockquote, 
-  #reader-content h1, 
-  #reader-content h2, 
-  #reader-content h3, 
-  #reader-content h4, 
-  #reader-content h5, 
-  #reader-content h6 {
-    color: var(--text) !important;
-  }
-  
-  #reader-content a, 
-  #reader-content a * {
-    color: var(--accent) !important;
-    text-decoration: underline;
-  }
-
-  #reader-content h1, #reader-content h2, #reader-content h3 {
-    font-family: var(--font-read);
-    margin: 1.8em 0 0.8em; line-height: 1.3; font-weight: bold;
-  }
-  #reader-content h1 { font-size: 1.6em; }
-  #reader-content h2 { font-size: 1.3em; }
-  #reader-content h3 { font-size: 1.1em; }
-  #reader-content p { margin-bottom: 1.2em; text-align: justify; }
+  #reader-content * { color: inherit; }
+  #reader-content a, #reader-content a * { color: var(--accent) !important; text-decoration-color: var(--accent-light); text-underline-offset: 4px; }
+  #reader-content h1, #reader-content h2, #reader-content h3 { font-family: var(--font-read); margin: 2em 0 1em; line-height: 1.3; font-weight: 700; }
+  #reader-content h1 { font-size: 1.7em; }
+  #reader-content h2 { font-size: 1.4em; }
+  #reader-content h3 { font-size: 1.2em; }
+  #reader-content p { margin-bottom: 1.2em; text-align: justify; hyphens: auto; }
   #reader-content p + p { text-indent: 1.5em; }
   #reader-content p:first-child { text-indent: 0; }
-  #reader-content img { max-width: 100%; height: auto; border-radius: var(--radius-sm); margin: 1.5em 0; display: block; }
-  
-  #reader-content blockquote {
-    border-left: 4px solid var(--accent) !important; padding-left: 1.2em;
-    margin: 1.5em 0; color: var(--text-muted) !important; font-style: italic;
-  }
-  #reader-content ul, #reader-content ol { padding-left: 1.8em; margin-bottom: 1.2em; }
-  #reader-content li { margin-bottom: 0.4em; }
-  #reader-content hr { border: none; border-top: 1px solid var(--border); margin: 2.5em 0; }
-  #reader-content table {
-    border-collapse: collapse; width: 100%; margin: 1.5em 0; font-size: 0.9em;
-  }
-  #reader-content td, #reader-content th {
-    border: 1px solid var(--border); padding: 8px 12px;
-  }
-  #reader-content th { background: var(--border); font-weight: bold; }
+  #reader-content img { max-width: 100%; height: auto; border-radius: var(--radius-sm); margin: 2em auto; display: block; }
+  #reader-content blockquote { border-left: 4px solid var(--accent); padding-left: 1.5em; margin: 2em 0; color: var(--text-muted) !important; font-style: italic; }
+  #reader-content ul, #reader-content ol { padding-left: 2em; margin-bottom: 1.5em; }
+  #reader-content li { margin-bottom: 0.5em; }
+  #reader-content hr { border: none; border-top: 1px solid var(--border-strong); margin: 3em 0; }
+  #reader-content table { border-collapse: collapse; width: 100%; margin: 2em 0; font-size: 0.9em; }
+  #reader-content td, #reader-content th { border: 1px solid var(--border); padding: 12px 16px; }
+  #reader-content th { background: var(--bg); font-weight: 600; }
 
-  /* Shared overlay for TOC and Search — FIX: one overlay, managed by reference count */
   #panel-overlay {
-    position: fixed; inset: 0; z-index: 299; background: rgba(0,0,0,0.4);
-    opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
+    position: fixed; inset: 0; z-index: 299; background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none; transition: opacity var(--transition);
   }
   #panel-overlay.visible { opacity: 1; pointer-events: all; }
 
-  #toc-panel {
-    position: fixed; top: 0; left: 0; bottom: 0; z-index: 300;
-    width: min(320px, 88vw); background: var(--surface);
-    border-right: 1px solid var(--border); box-shadow: 4px 0 24px rgba(0,0,0,0.15);
-    transform: translateX(-100%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-    display: flex; flex-direction: column;
+  .side-panel {
+    position: fixed; top: 0; bottom: 0; z-index: 300;
+    width: min(360px, 85vw); background: var(--surface-solid);
+    box-shadow: var(--shadow-lg); display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top);
+  }
+  
+  #toc-panel {
+    left: 0; border-right: 1px solid var(--border);
+    transform: translateX(-100%); transition: transform var(--spring);
   }
   #toc-panel.open { transform: translateX(0); }
 
-  .toc-header {
-    padding: 16px; border-bottom: 1px solid var(--border);
+  #search-panel {
+    right: 0; border-left: 1px solid var(--border);
+    transform: translateX(100%); transition: transform var(--spring);
+  }
+  #search-panel.open { transform: translateX(0); }
+
+  .panel-header {
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
   }
-  .toc-header h2 { font-size: 16px; font-weight: 700; }
-  #toc-list {
-    flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 0;
-  }
+  .panel-header h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  
+  #toc-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 0; }
   .toc-item {
-    padding: 12px 20px; font-size: 14px; cursor: pointer; color: var(--text-muted);
-    transition: all var(--transition); display: block; border: none;
-    background: none; width: 100%; text-align: left;
-    font-family: var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 14px 24px; font-size: 14px; cursor: pointer; color: var(--text-muted);
+    transition: all 0.2s; display: block; border: none; background: transparent; width: 100%; text-align: left;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
   }
-  .toc-item:hover { background: var(--border); color: var(--text); }
-  .toc-item.active { color: var(--accent); font-weight: 600; background: var(--accent-light); }
-  .toc-item[data-depth="1"] { padding-left: 32px; font-size: 13px; }
-  .toc-item[data-depth="2"] { padding-left: 44px; font-size: 12px; }
+  .toc-item:hover { background: var(--bg); color: var(--text); }
+  .toc-item.active { color: var(--accent); font-weight: 600; background: var(--accent-light); border-left: 3px solid var(--accent); padding-left: 21px; }
+  .toc-item[data-depth="1"] { padding-left: 40px; font-size: 13px; }
+  .toc-item[data-depth="2"] { padding-left: 56px; font-size: 13px; }
+  .toc-item.active[data-depth="1"] { padding-left: 37px; }
+  .toc-item.active[data-depth="2"] { padding-left: 53px; }
 
   #settings-panel {
-    position: fixed; bottom: calc(65px + env(safe-area-inset-bottom)); right: 16px;
-    z-index: 250; width: min(320px, 92vw); background: var(--surface);
+    position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%) translateY(40px) scale(0.95); opacity: 0;
+    z-index: 250; width: min(380px, 92vw); background: var(--surface);
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--border-strong); border-radius: var(--radius);
-    box-shadow: var(--shadow); padding: 20px;
-    transform: translateY(120%); opacity: 0; transition: transform var(--transition), opacity var(--transition);
-    pointer-events: none;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
+    box-shadow: var(--shadow-lg); padding: 24px;
+    transition: all var(--spring); pointer-events: none;
+    max-height: calc(100vh - 120px); overflow-y: auto;
   }
-  #settings-panel.open { transform: translateY(0); opacity: 1; pointer-events: all; }
-  .settings-section { margin-bottom: 18px; }
+  #settings-panel.open { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; pointer-events: all; }
+  
+  .settings-section { margin-bottom: 24px; }
   .settings-section:last-child { margin-bottom: 0; }
-  .settings-label { font-size: 11px; font-weight: 700; color: var(--text-hint); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
-  .btn-group { display: flex; gap: 6px; }
+  .settings-label { font-size: 12px; font-weight: 700; color: var(--text-hint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  
+  .btn-group { display: flex; gap: 8px; background: var(--border); padding: 4px; border-radius: var(--radius-sm); }
   .btn-pill {
-    flex: 1; padding: 8px 4px; border: 1px solid var(--border-strong);
-    border-radius: 99px; background: none; color: var(--text-muted);
-    font-size: 13px; font-family: var(--font-ui); cursor: pointer;
-    transition: all var(--transition); text-align: center;
+    flex: 1; padding: 10px 4px; border: none; border-radius: 6px;
+    background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; text-align: center;
   }
-  .btn-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-  .btn-pill:hover:not(.active) { background: var(--border); color: var(--text); }
-  .theme-grid { display: flex; gap: 10px; }
+  .btn-pill.active { background: var(--surface-solid); color: var(--text); box-shadow: var(--shadow-sm); font-weight: 600; }
+  .btn-pill:hover:not(.active) { color: var(--text); }
+  
+  .theme-grid { display: flex; gap: 12px; }
   .theme-dot {
-    width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
-    transition: all var(--transition); flex-shrink: 0; position: relative;
+    flex: 1; height: 44px; border-radius: var(--radius-sm); cursor: pointer; border: 2px solid transparent;
+    transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600;
   }
-  .theme-dot.active { border-color: var(--accent); transform: scale(1.1); }
-  .theme-dot[data-t="light"] { background: #F7F4EE; border-color: rgba(0,0,0,0.15); }
-  .theme-dot[data-t="dark"] { background: #121214; }
-  .theme-dot[data-t="sepia"] { background: #F4EAD4; border-color: rgba(0,0,0,0.1); }
-  .settings-slider { width: 100%; margin-top: 4px; accent-color: var(--accent); cursor: pointer; }
-  .font-sample {
-    font-family: var(--font-read); font-size: var(--read-size);
-    color: var(--text-muted); margin-top: 6px; line-height: 1.5; text-align: center;
-  }
+  .theme-dot.active { border-color: var(--accent); }
+  .theme-dot[data-t="light"] { background: #FAFAFA; color: #171717; border: 1px solid var(--border-strong); }
+  .theme-dot[data-t="dark"] { background: #0A0A0A; color: #F5F5F5; }
+  .theme-dot[data-t="sepia"] { background: #F4ECD8; color: #433422; border: 1px solid var(--border-strong); }
+  .theme-dot.active[data-t="light"], .theme-dot.active[data-t="sepia"] { border-color: var(--accent); border-width: 2px; }
+  
+  .settings-slider { width: 100%; margin-top: 8px; accent-color: var(--accent); height: 6px; border-radius: 99px; background: var(--border); outline: none; -webkit-appearance: none; }
+  .settings-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #FFF; border: 1px solid var(--border-strong); box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
+  
+  .font-sample { font-family: var(--font-read); font-size: var(--read-size); color: var(--text-muted); margin-top: 12px; line-height: 1.5; text-align: center; }
 
-  #empty-lib { text-align: center; padding: 48px 0; color: var(--text-hint); font-size: 14px; }
+  #empty-lib { text-align: center; padding: 64px 20px; color: var(--text-muted); font-size: 15px; }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; display: inline-block; }
 
   .spinner {
-    width: 32px; height: 32px; border: 3px solid var(--border-strong);
+    width: 40px; height: 40px; border: 3px solid var(--border-strong);
     border-top-color: var(--accent); border-radius: 50%;
-    animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+    animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; margin: 0 auto 16px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   #loading {
     display: none; position: fixed; inset: 0; z-index: 400;
-    background: var(--bg); flex-direction: column;
-    align-items: center; justify-content: center;
-    font-size: 14px; color: var(--text-muted);
+    background: var(--surface); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    flex-direction: column; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 500; color: var(--text);
   }
   #loading.visible { display: flex; }
 
   #toast {
-    position: fixed; bottom: calc(100px + env(safe-area-inset-bottom)); left: 50%;
-    transform: translateX(-50%) translateY(20px);
+    position: fixed; bottom: calc(120px + env(safe-area-inset-bottom)); left: 50%;
+    transform: translateX(-50%) translateY(20px) scale(0.9);
     background: var(--text); color: var(--bg);
-    padding: 10px 18px; border-radius: 99px; font-size: 13px; font-weight: 500;
-    opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 500;
-    white-space: nowrap; max-width: 90vw; box-shadow: var(--shadow);
+    padding: 12px 24px; border-radius: 99px; font-size: 14px; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: all var(--spring); z-index: 500;
+    white-space: nowrap; max-width: 90vw; box-shadow: var(--shadow-lg);
   }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 
-  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
 
   @media (max-width: 480px) {
     #reader-content { padding-left: 20px; padding-right: 20px; }
-    .home-hero { padding: 24px 0 20px; }
-    #settings-panel { right: 4vw; width: 92vw; }
+    .home-hero { padding: 32px 0 24px; }
+    #settings-panel { width: calc(100vw - 32px); bottom: calc(20px + env(safe-area-inset-bottom)); }
   }
 
-  .lib-org { display: flex; gap: 8px; margin-bottom: 16px; }
-  .lib-search { flex: 1; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface); color: var(--text); font-family: var(--font-ui); font-size: 13px; outline: none; }
-  .lib-sort { padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface); color: var(--text); font-family: var(--font-ui); font-size: 13px; outline: none; cursor: pointer; }
-
-  #search-panel {
-    position: fixed; top: 0; right: 0; bottom: 0; z-index: 300;
-    width: min(320px, 88vw); background: var(--surface);
-    border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.15);
-    transform: translateX(100%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-    display: flex; flex-direction: column;
-    padding-top: env(safe-area-inset-top);
+  .lib-org { display: flex; gap: 12px; margin-bottom: 24px; }
+  .lib-search { 
+    flex: 1; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); 
+    background: var(--surface-solid); color: var(--text); font-family: var(--font-ui); font-size: 14px; 
+    transition: all 0.2s; outline: none;
   }
-  #search-panel.open { transform: translateX(0); }
-  .search-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+  .lib-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .lib-sort { 
+    padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); 
+    background: var(--surface-solid); color: var(--text); font-family: var(--font-ui); font-size: 14px; 
+    outline: none; cursor: pointer; transition: all 0.2s;
+  }
+  .lib-sort:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+  .search-header-inner { padding: 20px 24px 16px; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid var(--border); }
+  .search-title-row { display: flex; align-items: center; justify-content: space-between; }
+  .search-title-row h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
   .search-input-wrapper { display: flex; gap: 8px; }
-  .search-input { flex: 1; padding: 8px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 13px; outline: none; }
+  .search-input { 
+    flex: 1; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); 
+    background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px; outline: none; 
+    transition: all 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  
   #search-results { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 0; }
-  /* FIX: search-item had conflicting border: none overriding border-bottom */
   .search-item {
-    padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer;
-    text-align: left; background: none; width: 100%; display: block;
-    font-family: var(--font-ui);
+    padding: 16px 24px; border-bottom: 1px solid var(--border); cursor: pointer;
+    text-align: left; background: transparent; width: 100%; display: block; border-top: none; border-left: none; border-right: none;
+    font-family: var(--font-ui); transition: background 0.2s;
   }
-  .search-item:hover { background: var(--border); }
-  .search-item-chap { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
-  .search-item-text { font-size: 13px; color: var(--text); line-height: 1.4; }
-  /* FIX: search result count display */
-  #search-count { font-size: 12px; color: var(--text-hint); padding: 8px 20px 0; }
+  .search-item:hover { background: var(--bg); }
+  .search-item-chap { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em; }
+  .search-item-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+  #search-count { font-size: 13px; font-weight: 500; color: var(--text-hint); padding: 12px 24px 4px; }
 
-  .stats-row { display: flex; justify-content: space-between; padding: 0 max(16px, env(safe-area-inset-left)) 6px; font-size: 11px; color: var(--text-hint); user-select: none; }
+  .stats-row { display: flex; justify-content: space-between; padding: 0 max(20px, env(safe-area-inset-left)) 12px; font-size: 12px; font-weight: 500; color: var(--text-hint); user-select: none; }
 
-  /* FIX: paginate layout height accounts for full bottom bar (~110px + stats row) */
-  #reader.layout-paginate {
-    overflow-x: auto !important; overflow-y: hidden !important; display: block !important; scroll-snap-type: x mandatory;
-  }
+  #reader.layout-paginate { overflow-x: auto !important; overflow-y: hidden !important; display: block !important; scroll-snap-type: x mandatory; }
   #reader.layout-paginate #reader-content {
     max-width: none !important; column-gap: 48px !important;
-    height: calc(100vh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
-    padding-top: calc(20px + env(safe-area-inset-top)) !important; padding-bottom: 20px !important;
+    height: calc(100vh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    padding-top: calc(24px + env(safe-area-inset-top)) !important; padding-bottom: 24px !important;
     display: block !important;
   }
   #reader.layout-paginate #reader-content > * { scroll-snap-align: start; }
 
-  #brightness-overlay { position: fixed; inset: 0; background: #000000; pointer-events: none; z-index: 9999; opacity: 0; mix-blend-mode: multiply; }
+  #brightness-overlay { position: fixed; inset: 0; background: #000000; pointer-events: none; z-index: 9999; opacity: 0; mix-blend-mode: multiply; transition: opacity 0.2s; }
+  
+  .standalone-btn { width: 100%; padding: 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface-solid); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .standalone-btn:hover { background: var(--bg); }
+  .standalone-btn:active { transform: scale(0.98); }
 </style>
 </head>
 <body>
 <div id="brightness-overlay"></div>
 <div id="app">
 
-  <div id="topbar">
-    <button class="bar-btn" id="btn-toc" aria-label="Table of contents" style="display:none">☰</button>
-    <span class="bar-title" id="topbar-title">Leaf</span>
-    <button class="bar-btn" id="btn-home" aria-label="Back to library" style="display:none">⌂</button>
-    <button class="bar-btn" id="btn-search-toggle" aria-label="Search" style="display:none">🔍</button>
-    <button class="bar-btn" id="btn-settings" aria-label="Reading settings" style="display:none">Aa</button>
+  <div id="topbar" class="glass-panel">
+    <button class="bar-btn" id="btn-toc" aria-label="Table of contents" style="display:none">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+    <span class="bar-title" id="topbar-title">SaOat</span>
+    <button class="bar-btn" id="btn-search-toggle" aria-label="Search" style="display:none">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+    <button class="bar-btn" id="btn-settings" aria-label="Reading settings" style="display:none">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+    </button>
+    <button class="bar-btn" id="btn-home" aria-label="Back to library" style="display:none">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    </button>
   </div>
 
   <div id="home">
     <div id="home-inner">
       <div class="home-hero">
-        <div class="leaf-icon">🍃</div>
-        <h1>Leaf</h1>
+        <div class="saoat-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        </div>
+        <h1>SaOat</h1>
         <p>A clean, calm EPUB reader</p>
       </div>
 
       <div id="drop-zone" role="button" tabindex="0" aria-label="Open EPUB file">
-        <div class="drop-icon">📖</div>
+        <div class="drop-icon">
+          <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        </div>
         <div class="drop-title">Open an EPUB</div>
         <div class="drop-sub">Tap to browse files, or drag &amp; drop here</div>
         <input type="file" id="file-input" accept=".epub,application/epub+zip">
       </div>
 
       <div id="library-section" style="display:none">
-        <div class="section-title">Library</div>
+        <div class="section-title">Your Library</div>
         <div class="lib-org">
           <input type="text" id="lib-search" class="lib-search" placeholder="Search books...">
           <select id="lib-sort" class="lib-sort">
@@ -486,6 +510,9 @@
         <div id="library-list"></div>
       </div>
       <div id="empty-lib" style="display:none">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        </div>
         <p>No books yet — open an EPUB to start reading</p>
       </div>
     </div>
@@ -495,12 +522,13 @@
     <div id="reader-content"></div>
   </div>
 
-  <!-- FIX: bottombar starts hidden via class, not inline display:none -->
-  <div id="bottombar" class="reader-hidden">
+  <div id="bottombar" class="glass-panel reader-hidden">
     <div class="progress-row">
       <span class="progress-label" id="pct-label">0%</span>
       <div id="progress-track" role="slider" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div id="progress-fill" style="width:0%"></div>
+        <div class="progress-track-bg">
+          <div id="progress-fill" style="width:0%"></div>
+        </div>
         <div id="progress-thumb" style="left:0%"></div>
       </div>
       <span class="progress-label right" id="loc-label">p.0</span>
@@ -510,28 +538,37 @@
       <span id="stat-reading-speed">-- words left</span>
     </div>
     <div class="chapter-row">
-      <button class="nav-btn" id="btn-prev">← Prev</button>
+      <button class="nav-btn" id="btn-prev">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Prev
+      </button>
       <span id="chapter-name">Chapter</span>
-      <button class="nav-btn" id="btn-next">Next →</button>
+      <button class="nav-btn" id="btn-next">
+        Next
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
     </div>
   </div>
 
-  <!-- FIX: single overlay element for both TOC and Search -->
   <div id="panel-overlay"></div>
 
-  <div id="toc-panel" role="dialog" aria-label="Table of contents">
-    <div class="toc-header">
+  <div id="toc-panel" class="side-panel" role="dialog" aria-label="Table of contents">
+    <div class="panel-header">
       <h2>Contents</h2>
-      <button class="bar-btn" id="btn-toc-close" aria-label="Close">✕</button>
+      <button class="bar-btn" id="btn-toc-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div id="toc-list"></div>
   </div>
 
-  <div id="search-panel" role="dialog" aria-label="In-book search">
-    <div class="search-header">
-      <div style="display:flex; align-items:center; justify-content:space-between;">
-        <h2 style="font-size:16px; font-weight:700;">Search</h2>
-        <button class="bar-btn" id="btn-search-close" aria-label="Close">✕</button>
+  <div id="search-panel" class="side-panel" role="dialog" aria-label="In-book search">
+    <div class="search-header-inner">
+      <div class="search-title-row">
+        <h2>Search</h2>
+        <button class="bar-btn" id="btn-search-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <div class="search-input-wrapper">
         <input type="text" id="search-input" class="search-input" placeholder="Search text...">
@@ -554,14 +591,14 @@
       <input type="range" class="settings-slider" id="brightness-slider" min="0" max="80" step="1" value="0">
     </div>
     <div class="settings-section">
-      <button class="btn-pill" id="btn-fullscreen" style="width:100%; border-radius:var(--radius-sm);">Toggle Fullscreen</button>
+      <button class="standalone-btn" id="btn-fullscreen">Toggle Fullscreen</button>
     </div>
     <div class="settings-section">
       <div class="settings-label">Theme</div>
       <div class="theme-grid">
-        <div class="theme-dot active" data-t="light" title="Light" role="button" tabindex="0"></div>
-        <div class="theme-dot" data-t="dark" title="Dark" role="button" tabindex="0"></div>
-        <div class="theme-dot" data-t="sepia" title="Sepia" role="button" tabindex="0"></div>
+        <div class="theme-dot active" data-t="light" title="Light" role="button" tabindex="0">Aa</div>
+        <div class="theme-dot" data-t="dark" title="Dark" role="button" tabindex="0">Aa</div>
+        <div class="theme-dot" data-t="sepia" title="Sepia" role="button" tabindex="0">Aa</div>
       </div>
     </div>
     <div class="settings-section">
@@ -584,9 +621,9 @@
     <div class="settings-section">
       <div class="settings-label">Font family</div>
       <div class="btn-group">
-        <button class="btn-pill active" data-font="serif">Serif</button>
-        <button class="btn-pill" data-font="sans">Sans</button>
-        <button class="btn-pill" data-font="mono">Mono</button>
+        <button class="btn-pill active" data-font="serif" style="font-family: Georgia, serif;">Serif</button>
+        <button class="btn-pill" data-font="sans" style="font-family: system-ui, sans-serif;">Sans</button>
+        <button class="btn-pill" data-font="mono" style="font-family: monospace;">Mono</button>
       </div>
     </div>
   </div>
@@ -602,6 +639,39 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 'use strict';
+
+const manifestObj = {
+  "name": "SaOat EPUB Reader",
+  "short_name": "SaOat",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FAFAFA",
+  "theme_color": "#0F766E",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' stroke='%230F766E' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z'%3E%3C/path%3E%3Cpath d='M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'%3E%3C/path%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+};
+const manifestBlob = new Blob([JSON.stringify(manifestObj)], {type: 'application/json'});
+document.getElementById('pwa-manifest').href = URL.createObjectURL(manifestBlob);
+
+const swCode = `
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => self.clients.claim());
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    fetch(e.request).catch(() => new Response('SaOat is offline. Connect to the internet to load new files.'))
+  );
+});
+`;
+const swBlob = new Blob([swCode], {type: 'application/javascript'});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(e => {});
+}
 
 const state = {
   books: [],
@@ -630,7 +700,6 @@ const readerContent = $('reader-content');
 const topbar        = $('topbar');
 const bottombar     = $('bottombar');
 const tocPanel      = $('toc-panel');
-// FIX: renamed from toc-overlay to panel-overlay (shared)
 const panelOverlay  = $('panel-overlay');
 const settingsPanel = $('settings-panel');
 const libraryList   = $('library-list');
@@ -644,8 +713,7 @@ const progressThumb = $('progress-thumb');
 const pctLabel      = $('pct-label');
 const locLabel      = $('loc-label');
 const chapterName   = $('chapter-name');
-
-// ── State persistence ────────────────────────────────────────────────────────
+const metaTheme     = $('meta-theme-color');
 
 function saveState() {
   try {
@@ -658,13 +726,13 @@ function saveState() {
         coverBlob: b.coverBlob || null,
       }))
     };
-    localStorage.setItem('leaf_state', JSON.stringify(data));
+    localStorage.setItem('saoat_state', JSON.stringify(data));
   } catch(e) {}
 }
 
 function loadState() {
   try {
-    const raw = localStorage.getItem('leaf_state');
+    const raw = localStorage.getItem('saoat_state');
     if (!raw) return;
     const data = JSON.parse(raw);
     if (data.settings) Object.assign(state.settings, data.settings);
@@ -674,8 +742,6 @@ function loadState() {
   } catch(e) {}
 }
 
-// ── Toast ────────────────────────────────────────────────────────────────────
-
 let toastTimer;
 function toast(msg) {
   toastEl.textContent = msg;
@@ -684,12 +750,14 @@ function toast(msg) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
 }
 
-// ── Settings / theming ───────────────────────────────────────────────────────
-
 function applySettings() {
   const s = state.settings;
   document.documentElement.setAttribute('data-theme', s.theme);
   document.documentElement.style.colorScheme = s.theme === 'dark' ? 'dark' : 'light';
+
+  if (s.theme === 'dark') metaTheme.content = '#0A0A0A';
+  else if (s.theme === 'sepia') metaTheme.content = '#F4ECD8';
+  else metaTheme.content = '#FAFAFA';
 
   document.documentElement.style.setProperty('--read-size', s.fontSize + 'px');
   document.documentElement.style.setProperty('--read-lh', (s.lineHeight / 100).toFixed(2));
@@ -697,7 +765,7 @@ function applySettings() {
 
   const fontMap = {
     serif: "Georgia, 'Times New Roman', serif",
-    sans:  "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+    sans:  "'-apple-system', BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
     mono:  "'Courier New', Courier, monospace"
   };
   document.documentElement.style.setProperty('--font-read', fontMap[s.fontFamily] || fontMap.serif);
@@ -723,8 +791,6 @@ function applySettings() {
     readerContent.style.columnWidth = 'auto';
   }
 }
-
-// ── EPUB parser ──────────────────────────────────────────────────────────────
 
 async function parseEpub(arrayBuffer) {
   const zip = await JSZip.loadAsync(arrayBuffer);
@@ -764,7 +830,6 @@ async function parseEpub(arrayBuffer) {
     const raw = await file.async('string');
     const doc = new DOMParser().parseFromString(raw, 'text/html');
 
-    // Resolve embedded images to base64
     const imgEls = doc.querySelectorAll('img, image');
     await Promise.all(Array.from(imgEls).map(async img => {
       const src = img.getAttribute('src') || img.getAttribute('xlink:href') || '';
@@ -789,7 +854,6 @@ async function parseEpub(arrayBuffer) {
     return { id: item.id, href: item.href, html: body, title: title.trim() };
   }));
 
-  // Parse TOC — prefer EPUB3 nav, fall back to NCX
   const tocItems = [];
   const ncxId    = opfDoc.querySelector('spine')?.getAttribute('toc');
   const navItem  = Object.values(manifest).find(m => m.type === 'application/xhtml+xml' && m.href.includes('nav'));
@@ -830,7 +894,6 @@ async function parseEpub(arrayBuffer) {
     });
   }
 
-  // Extract cover image
   let coverBlob = null;
   const coverId   = opfDoc.querySelector('meta[name="cover"]')?.getAttribute('content');
   const coverItem = (coverId && manifest[coverId]) ||
@@ -880,12 +943,10 @@ function resolvePath(base, relative) {
   return parts.join('/');
 }
 
-// ── IndexedDB ────────────────────────────────────────────────────────────────
-
 let db;
 function openDB() {
   return new Promise((res, rej) => {
-    const req = indexedDB.open('leaf_books', 1);
+    const req = indexedDB.open('saoat_books', 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore('books', { keyPath: 'id' });
     req.onsuccess = e => { db = e.target.result; res(db); };
     req.onerror   = () => rej(req.error);
@@ -914,8 +975,6 @@ function deleteBook(id) {
     tx.oncomplete = res;
   });
 }
-
-// ── Library rendering ────────────────────────────────────────────────────────
 
 function renderLibrary() {
   if (!state.books.length) {
@@ -963,7 +1022,7 @@ function renderLibrary() {
       img.alt = book.title;
       thumb.appendChild(img);
     } else {
-      thumb.textContent = '📖';
+      thumb.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`;
     }
 
     const info   = el('div', 'book-info');
@@ -975,12 +1034,12 @@ function renderLibrary() {
     prog.appendChild(fill);
     info.appendChild(title); info.appendChild(author); info.appendChild(prog);
 
-    const del = el('button', 'book-delete', '✕');
+    const del = el('button', 'book-delete');
+    del.innerHTML = `<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
     del.setAttribute('aria-label', 'Remove book');
     del.addEventListener('click', async e => {
       e.stopPropagation();
       if (!confirm(`Remove "${book.title}" from library?`)) return;
-      // FIX: await delete before saving state to avoid race condition
       await deleteBook(book.id);
       state.books = state.books.filter(b => b.id !== book.id);
       saveState();
@@ -994,8 +1053,6 @@ function renderLibrary() {
     libraryList.appendChild(card);
   });
 }
-
-// ── Open / show ──────────────────────────────────────────────────────────────
 
 async function openBook(id) {
   const meta = state.books.find(b => b.id === id);
@@ -1017,7 +1074,7 @@ async function openBook(id) {
       }
     }
 
-    state.current   = meta;
+    state.current    = meta;
     state.chapterIdx = meta.chapterIdx || 0;
 
     showReader();
@@ -1041,7 +1098,6 @@ function calculateScrollPctFromProgress(progPct) {
 function showReader() {
   homeEl.classList.add('reader-active');
   readerEl.classList.add('active');
-  // FIX: use class instead of inline display to avoid fighting CSS
   bottombar.classList.remove('reader-hidden');
   $('btn-toc').style.display         = '';
   $('btn-home').style.display        = '';
@@ -1067,12 +1123,10 @@ function showHome() {
   $('btn-home').style.display        = 'none';
   $('btn-settings').style.display    = 'none';
   $('btn-search-toggle').style.display = 'none';
-  $('topbar-title').textContent = 'Leaf';
+  $('topbar-title').textContent = 'SaOat';
   closeTOC(); closeSettings(); closeSearch();
   renderLibrary();
 }
-
-// ── Chapter rendering ────────────────────────────────────────────────────────
 
 function renderChapter(idx, scrollPct = 0) {
   const book = state.current;
@@ -1084,7 +1138,6 @@ function renderChapter(idx, scrollPct = 0) {
   const chapter = book.chapters[idx];
   readerContent.innerHTML = chapter.html;
 
-  // Strip inline styles except italic / bold
   readerContent.querySelectorAll('[style]').forEach(node => {
     const style = node.getAttribute('style');
     const keep  = [];
@@ -1098,7 +1151,6 @@ function renderChapter(idx, scrollPct = 0) {
     readerContent.style.columnWidth = (window.innerWidth - 48) + 'px';
   }
 
-  // FIX: use requestAnimationFrame after a short delay so layout is fully computed
   setTimeout(() => {
     const isPag = state.settings.layout === 'paginate';
     if (scrollPct > 0) {
@@ -1128,8 +1180,6 @@ function renderChapter(idx, scrollPct = 0) {
   updateTOCActive(idx);
 }
 
-// ── Progress ─────────────────────────────────────────────────────────────────
-
 function updateProgress() {
   const book = state.current;
   if (!book?.chapters) return;
@@ -1147,19 +1197,16 @@ function updateProgress() {
     ((state.chapterIdx + chapterScrollPct) / totalChaps) * 100
   ));
 
-  // FIX: clamp thumb position so it stays within track (account for 7px half-width)
   const thumbPct = Math.max(0, Math.min(100, overallPct));
   progressFill.style.width  = overallPct + '%';
   progressThumb.style.left  = thumbPct + '%';
   pctLabel.textContent      = Math.round(overallPct) + '%';
   locLabel.textContent      = `${state.chapterIdx + 1}/${totalChaps}`;
 
-  // FIX: update aria-valuenow for accessibility
   $('progress-track').setAttribute('aria-valuenow', Math.round(overallPct));
 
   book.progress = Math.round(overallPct);
 
-  // Estimate remaining reading time
   let remainingWords = 0;
   for (let i = state.chapterIdx; i < book.chapters.length; i++) {
     const chap = book.chapters[i];
@@ -1180,12 +1227,9 @@ function updateProgress() {
     : 'Finished';
   $('stat-reading-speed').textContent = `${remainingWords.toLocaleString()} words left`;
 
-  // Debounced save
   clearTimeout(updateProgress._saveTimer);
   updateProgress._saveTimer = setTimeout(saveState, 1500);
 }
-
-// ── TOC ──────────────────────────────────────────────────────────────────────
 
 function renderTOC() {
   const book = state.current;
@@ -1225,8 +1269,6 @@ function updateTOCActive(chapterIdx) {
   });
 }
 
-// ── Panel open/close — FIX: shared overlay ref-counted properly ───────────────
-
 function updateOverlay() {
   const open = state.tocOpen || state.searchOpen;
   panelOverlay.classList.toggle('visible', open);
@@ -1253,9 +1295,6 @@ function closeSearch() {
 }
 function toggleSearch() { state.searchOpen ? closeSearch() : openSearch(); }
 
-// ── Search ───────────────────────────────────────────────────────────────────
-
-// FIX: limit search results to prevent freezing on large books
 const MAX_SEARCH_RESULTS = 100;
 
 function performSearch() {
@@ -1266,7 +1305,6 @@ function performSearch() {
   countEl.textContent = '';
   if (!query || !state.current?.chapters) return;
 
-  // Escape regex special chars for safe use in RegExp
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const highlightRe  = new RegExp(escapedQuery, 'gi');
 
@@ -1297,7 +1335,6 @@ function performSearch() {
         const item      = el('button', 'search-item');
         const itemChap  = el('div', 'search-item-chap', chapTitle);
         const itemText  = el('div', 'search-item-text');
-        // FIX: use textContent for snippet then add HTML for highlight — safer than raw innerHTML
         const highlighted = ('…' + snippet + '…').replace(highlightRe, m => `<mark style="background:var(--accent-light);color:var(--accent);border-radius:2px;">${m}</mark>`);
         itemText.innerHTML = highlighted;
 
@@ -1309,14 +1346,14 @@ function performSearch() {
         frag.appendChild(item);
       }
       index = lower.indexOf(query, index + 1);
-      if (total > MAX_SEARCH_RESULTS * 5) break outer; // safety bail on huge books
+      if (total > MAX_SEARCH_RESULTS * 5) break outer; 
     }
   }
 
   resultsContainer.appendChild(frag);
 
   if (total === 0) {
-    resultsContainer.appendChild(el('div', 'toc-item', 'No matches found'));
+    resultsContainer.appendChild(el('div', 'search-item', 'No matches found'));
     countEl.textContent = '';
   } else {
     countEl.textContent = shown < total
@@ -1324,8 +1361,6 @@ function performSearch() {
       : `${total} result${total !== 1 ? 's' : ''}`;
   }
 }
-
-// ── Import ───────────────────────────────────────────────────────────────────
 
 async function importFile(file) {
   if (!file || !file.name.toLowerCase().endsWith('.epub')) {
@@ -1367,8 +1402,6 @@ async function importFile(file) {
   }
 }
 
-// ── Event listeners ───────────────────────────────────────────────────────────
-
 const fileInput = $('file-input');
 const dropZone  = $('drop-zone');
 
@@ -1396,13 +1429,11 @@ $('btn-settings').addEventListener('click', e => { e.stopPropagation(); closeTOC
 $('btn-search-toggle').addEventListener('click', e => { e.stopPropagation(); closeTOC(); closeSettings(); toggleSearch(); });
 $('btn-search-close').addEventListener('click', closeSearch);
 $('search-input').addEventListener('input', performSearch);
-// FIX: panelOverlay closes both panels
 panelOverlay.addEventListener('click', () => { closeTOC(); closeSearch(); });
 
 $('lib-search').addEventListener('input', renderLibrary);
 $('lib-sort').addEventListener('change', renderLibrary);
 
-// Reader tap zones for navigation / bar toggle
 readerEl.addEventListener('click', e => {
   if (e.target.closest('button, a, input, [role="slider"], #settings-panel, #toc-panel, #search-panel')) return;
   if (window.getSelection().toString().trim() !== '') return;
@@ -1412,7 +1443,6 @@ readerEl.addEventListener('click', e => {
   const isPag = state.settings.layout === 'paginate';
 
   if (x < w * 0.15) {
-    // Left zone — go back
     if (isPag) {
       if (readerEl.scrollLeft <= 10) {
         if (state.chapterIdx > 0) renderChapter(state.chapterIdx - 1, 1);
@@ -1427,7 +1457,6 @@ readerEl.addEventListener('click', e => {
       }
     }
   } else if (x > w * 0.85) {
-    // Right zone — go forward
     if (isPag) {
       const sw = readerEl.scrollWidth, sl = readerEl.scrollLeft, cw = readerEl.clientWidth;
       if (sl + cw >= sw - 10) {
@@ -1444,7 +1473,6 @@ readerEl.addEventListener('click', e => {
       }
     }
   } else {
-    // Centre — toggle bars / close panels
     if (state.settingsOpen) { closeSettings(); return; }
     if (state.tocOpen)      { closeTOC();      return; }
     if (state.searchOpen)   { closeSearch();   return; }
@@ -1454,7 +1482,6 @@ readerEl.addEventListener('click', e => {
   }
 });
 
-// Progress drag — FIX: add/remove dragging class to disable transition during drag
 let isDraggingProgress = false;
 let dragPct = 0;
 
@@ -1486,7 +1513,6 @@ track.addEventListener('pointerup', e => {
   }
 });
 
-// FIX: also handle pointercancel to clean up
 track.addEventListener('pointercancel', () => {
   isDraggingProgress = false;
   progressFill.classList.remove('dragging');
@@ -1522,9 +1548,7 @@ function executeSeek(pct) {
   }
 }
 
-// Keyboard navigation
 document.addEventListener('keydown', e => {
-  // Don't capture keys when typing in inputs
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (!state.current) return;
 
@@ -1560,7 +1584,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Touch swipe to change chapter
 let touchStartX = 0, touchStartY = 0;
 readerEl.addEventListener('touchstart', e => {
   touchStartX = e.touches[0].clientX;
@@ -1576,7 +1599,6 @@ readerEl.addEventListener('touchend', e => {
   }
 }, { passive: true });
 
-// Settings sliders
 $('font-size-slider').addEventListener('input', e => { state.settings.fontSize = parseInt(e.target.value); applySettings(); saveState(); });
 $('line-height-slider').addEventListener('input', e => { state.settings.lineHeight = parseInt(e.target.value); applySettings(); saveState(); });
 $('brightness-slider').addEventListener('input', e => { state.settings.brightness = parseInt(e.target.value); applySettings(); saveState(); });
@@ -1589,7 +1611,6 @@ $('btn-fullscreen').addEventListener('click', () => {
   }
 });
 
-// FIX: on resize, re-render at the current chapter progress, not raw progress value
 window.addEventListener('resize', () => {
   if (state.current) {
     applySettings();
@@ -1620,14 +1641,11 @@ document.querySelectorAll('[data-layout]').forEach(btn => {
   });
 });
 
-// Close settings when clicking outside
 document.addEventListener('click', e => {
   if (state.settingsOpen && !settingsPanel.contains(e.target) && !e.target.closest('#btn-settings')) {
     closeSettings();
   }
 });
-
-// ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
   await openDB();
