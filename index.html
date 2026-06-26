@@ -32,6 +32,8 @@
     --read-size: 18px;
     --read-lh: 1.85;
     --read-width: 640px;
+    --page-pad-y: 40px;
+    --page-pad-x: 24px;
     --transition: 0.3s cubic-bezier(0.25, 1, 0.5, 1);
     --spring: 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   }
@@ -181,7 +183,7 @@
     overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   #home.reader-active { display: none; }
-  #home-inner { padding: 32px 24px; max-width: 540px; margin: 0 auto; width: 100%; }
+  #home-inner { padding: 32px 24px 80px; max-width: 540px; margin: 0 auto; width: 100%; }
 
   .home-hero { padding: 48px 0 40px; text-align: center; }
   .saoat-icon {
@@ -256,7 +258,7 @@
   
   #reader-content {
     flex: 1; max-width: var(--read-width); width: 100%; margin: 0 auto;
-    padding: calc(80px + env(safe-area-inset-top)) 24px calc(140px + env(safe-area-inset-bottom));
+    padding: calc(60px + var(--page-pad-y) + env(safe-area-inset-top)) var(--page-pad-x) calc(100px + var(--page-pad-y) + env(safe-area-inset-bottom));
     font-family: var(--font-read); font-size: var(--read-size); line-height: var(--read-lh);
     color: var(--text);
   }
@@ -444,9 +446,12 @@
 
   #reader.layout-paginate { overflow-x: auto !important; overflow-y: hidden !important; display: block !important; scroll-snap-type: x mandatory; }
   #reader.layout-paginate #reader-content {
-    max-width: none !important; column-gap: 48px !important;
-    height: calc(100vh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
-    padding-top: calc(24px + env(safe-area-inset-top)) !important; padding-bottom: 24px !important;
+    max-width: none !important; column-gap: calc(var(--page-pad-x) * 2) !important;
+    height: 100vh !important;
+    padding-top: calc(var(--page-pad-y) + env(safe-area-inset-top)) !important;
+    padding-bottom: calc(var(--page-pad-y) + env(safe-area-inset-bottom)) !important;
+    padding-left: var(--page-pad-x) !important;
+    padding-right: var(--page-pad-x) !important;
     display: block !important;
   }
   #reader.layout-paginate #reader-content > * { scroll-snap-align: start; }
@@ -514,6 +519,11 @@
           <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
         </div>
         <p>No books yet — open an EPUB to start reading</p>
+      </div>
+
+      <div id="danger-zone" style="margin-top: 64px; text-align: center;">
+        <button id="btn-clear-cache" class="standalone-btn" style="color: #DC2626; border-color: rgba(220, 38, 38, 0.3); background: rgba(220, 38, 38, 0.05); max-width: 240px; margin: 0 auto;">Clear All Data & Cache</button>
+        <p style="font-size: 12px; color: var(--text-hint); margin-top: 8px;">Removes all books and resets app</p>
       </div>
     </div>
   </div>
@@ -613,9 +623,9 @@
     <div class="settings-section">
       <div class="settings-label">Margins</div>
       <div class="btn-group">
-        <button class="btn-pill active" data-margin="640">Normal</button>
-        <button class="btn-pill" data-margin="520">Wide</button>
-        <button class="btn-pill" data-margin="440">Full</button>
+        <button class="btn-pill active" data-margin="large">Far</button>
+        <button class="btn-pill" data-margin="normal">Normal</button>
+        <button class="btn-pill" data-margin="small">Close</button>
       </div>
     </div>
     <div class="settings-section">
@@ -678,7 +688,7 @@ const state = {
   current: null,
   chapterIdx: 0,
   settings: {
-    theme: 'light', fontSize: 18, lineHeight: 185, maxWidth: 640, fontFamily: 'serif', layout: 'scroll', brightness: 0
+    theme: 'light', fontSize: 18, lineHeight: 185, margin: 'normal', fontFamily: 'serif', layout: 'scroll', brightness: 0
   },
   barsVisible: true,
   settingsOpen: false,
@@ -735,7 +745,13 @@ function loadState() {
     const raw = localStorage.getItem('saoat_state');
     if (!raw) return;
     const data = JSON.parse(raw);
-    if (data.settings) Object.assign(state.settings, data.settings);
+    if (data.settings) {
+      if (typeof data.settings.maxWidth !== 'undefined') {
+        data.settings.margin = 'normal';
+        delete data.settings.maxWidth;
+      }
+      Object.assign(state.settings, data.settings);
+    }
     if (data.books) {
       state.books = data.books.map(b => ({ ...b, chapters: null, _parsed: null }));
     }
@@ -755,13 +771,21 @@ function applySettings() {
   document.documentElement.setAttribute('data-theme', s.theme);
   document.documentElement.style.colorScheme = s.theme === 'dark' ? 'dark' : 'light';
 
-  if (s.theme === 'dark') metaTheme.content = '#0A0A0A';
-  else if (s.theme === 'sepia') metaTheme.content = '#F4ECD8';
-  else metaTheme.content = '#FAFAFA';
+  const themeColors = { light: '#FAFAFA', dark: '#0A0A0A', sepia: '#F4ECD8' };
+  metaTheme.content = themeColors[s.theme] || '#FAFAFA';
 
   document.documentElement.style.setProperty('--read-size', s.fontSize + 'px');
   document.documentElement.style.setProperty('--read-lh', (s.lineHeight / 100).toFixed(2));
-  document.documentElement.style.setProperty('--read-width', s.maxWidth + 'px');
+
+  const marginMap = {
+    large: { width: '480px', py: '60px', px: '32px' },
+    normal: { width: '640px', py: '40px', px: '24px' },
+    small: { width: '800px', py: '20px', px: '12px' }
+  };
+  const m = marginMap[s.margin] || marginMap.normal;
+  document.documentElement.style.setProperty('--read-width', m.width);
+  document.documentElement.style.setProperty('--page-pad-y', m.py);
+  document.documentElement.style.setProperty('--page-pad-x', m.px);
 
   const fontMap = {
     serif: "Georgia, 'Times New Roman', serif",
@@ -776,7 +800,7 @@ function applySettings() {
   $('font-sample').style.lineHeight = (s.lineHeight / 100).toFixed(2);
 
   document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === s.theme));
-  document.querySelectorAll('[data-margin]').forEach(b => b.classList.toggle('active', parseInt(b.dataset.margin) === s.maxWidth));
+  document.querySelectorAll('[data-margin]').forEach(b => b.classList.toggle('active', b.dataset.margin === s.margin));
   document.querySelectorAll('[data-font]').forEach(b => b.classList.toggle('active', b.dataset.font === s.fontFamily));
   document.querySelectorAll('[data-layout]').forEach(b => b.classList.toggle('active', b.dataset.layout === s.layout));
 
@@ -785,7 +809,7 @@ function applySettings() {
 
   if (s.layout === 'paginate') {
     readerEl.classList.add('layout-paginate');
-    readerContent.style.columnWidth = (window.innerWidth - 48) + 'px';
+    readerContent.style.columnWidth = (window.innerWidth - (parseInt(m.px) * 2)) + 'px';
   } else {
     readerEl.classList.remove('layout-paginate');
     readerContent.style.columnWidth = 'auto';
@@ -1082,7 +1106,6 @@ async function openBook(id) {
     renderChapter(state.chapterIdx, scrollPct);
     renderTOC();
   } catch(e) {
-    console.error(e);
     toast('Error opening book');
   } finally {
     loadingEl.classList.remove('visible');
@@ -1148,7 +1171,9 @@ function renderChapter(idx, scrollPct = 0) {
   });
 
   if (state.settings.layout === 'paginate') {
-    readerContent.style.columnWidth = (window.innerWidth - 48) + 'px';
+    const m = state.settings.margin || 'normal';
+    const marginMap = { large: '32px', normal: '24px', small: '12px' };
+    readerContent.style.columnWidth = (window.innerWidth - (parseInt(marginMap[m]) * 2)) + 'px';
   }
 
   setTimeout(() => {
@@ -1395,7 +1420,6 @@ async function importFile(file) {
     await openBook(id);
     toast(`Opened: ${parsed.title}`);
   } catch(e) {
-    console.error(e);
     toast('Could not open file — is it a valid EPUB?');
   } finally {
     loadingEl.classList.remove('visible');
@@ -1611,6 +1635,28 @@ $('btn-fullscreen').addEventListener('click', () => {
   }
 });
 
+$('btn-clear-cache').addEventListener('click', async () => {
+  if (confirm('Are you sure you want to delete all books, settings, and cache? This cannot be undone.')) {
+    try {
+      indexedDB.deleteDatabase('saoat_books');
+      localStorage.removeItem('saoat_state');
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) {
+          await reg.unregister();
+        }
+      }
+      window.location.reload();
+    } catch (e) {
+      alert('Error clearing cache.');
+    }
+  }
+});
+
 window.addEventListener('resize', () => {
   if (state.current) {
     applySettings();
@@ -1625,7 +1671,7 @@ document.querySelectorAll('.theme-dot').forEach(dot => {
 });
 
 document.querySelectorAll('[data-margin]').forEach(btn => {
-  btn.addEventListener('click', () => { state.settings.maxWidth = parseInt(btn.dataset.margin); applySettings(); saveState(); });
+  btn.addEventListener('click', () => { state.settings.margin = btn.dataset.margin; applySettings(); saveState(); });
 });
 
 document.querySelectorAll('[data-font]').forEach(btn => {
@@ -1653,7 +1699,7 @@ async function init() {
   applySettings();
   renderLibrary();
 }
-init().catch(console.error);
+init().catch(() => {});
 </script>
 </body>
 </html>
